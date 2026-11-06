@@ -325,6 +325,16 @@
         <div class="card-note" id="cache-ttl">Seit dem letzten erfolgreichen Abruf</div>
       </article>
       <article class="card">
+        <div class="card-label">Infografiken</div>
+        <div class="card-value" id="infographic-count">–</div>
+        <div class="card-note" id="infographic-note">G47IX über Discord</div>
+      </article>
+      <article class="card">
+        <div class="card-label">Discord-Worker</div>
+        <div class="card-value" id="worker-status">–</div>
+        <div class="card-note" id="worker-note">Letzter Abruf</div>
+      </article>
+      <article class="card">
         <div class="card-label">Zeitzone</div>
         <div class="card-value" id="timezone">–</div>
         <div class="card-note">Für Webansicht und iCal</div>
@@ -400,6 +410,22 @@
       setText("service-version", data.service_version);
       document.getElementById("calendar-path").textContent = data.calendar_path || "__CALENDAR_PATH__";
       document.getElementById("calendar-path").href = data.calendar_path || "__CALENDAR_PATH__";
+
+      const info = data.infographics || {};
+      const workerNames = { ok: "Läuft", degraded: "Gestört", error: "Fehler", disabled: "Aus", unconfigured: "Nicht eingerichtet", unknown: "Gestoppt" };
+      if (info.enabled === false) {
+        setText("infographic-count", "Aus");
+        setText("infographic-note", "In der config.json deaktiviert");
+        setText("worker-status", "Aus");
+        setText("worker-note", "Nicht benötigt");
+      } else {
+        const counts = info.by_status || {};
+        setText("infographic-count", info.total ?? 0);
+        setText("infographic-note", info.error ? `Fehler: ${info.error}` : `${counts.matched || 0} zugeordnet · ${counts.manual_review || 0} zu prüfen · ${counts.pending || 0} offen`);
+        const worker = info.worker || {};
+        setText("worker-status", workerNames[worker.status] || worker.status || "–");
+        setText("worker-note", worker.lastPollAt ? `Letzter Abruf: ${formatDateTime.format(new Date(worker.lastPollAt))}` : (worker.lastError || "Noch kein Abruf"));
+      }
 
       const errorBox = document.getElementById("error-box");
       errorBox.style.display = data.last_error ? "block" : "none";

@@ -1,21 +1,61 @@
+# Pokémon-GO-Kalender mit Discord-Worker für G47IX-Infografiken.
+#
+# WICHTIG: Diese Datei im selben Ordner wie bisher verwenden. Docker benennt
+# das Volume nach dem Ordner (<ordner>_scrapedduck_ical_data). Service-Name
+# und Volume-Schlüssel sind unverändert, damit das bestehende Volume mit
+# manuellen Events, Bildern und Caches weiterverwendet wird.
+#
+# Geheimnisse (Admin-Passwort, Discord-Token, IDs) stehen in der .env im
+# selben Ordner – Vorlage: .env.example.
+
 services:
   scrapedduck-ical:
-    build: .
+    image: ghcr.io/emrewest/pogo-kalender:latest
+    # Alternativ lokal bauen: die image-Zeile auskommentieren und build: . aktivieren
+    # build: .
     container_name: scrapedduck-ical
     restart: unless-stopped
-
     environment:
       TZ: Europe/Berlin
       CONFIG_FILE: /config/config.json
       PORT: "8080"
       LOG_LEVEL: INFO
-
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
     volumes:
       - ./config.json:/config/config.json:ro
       - scrapedduck_ical_data:/data
-
     ports:
       - "8080:8080"
+
+  scrapedduck-ical-discord:
+    image: ghcr.io/emrewest/pogo-kalender:latest
+    # build: .
+    container_name: scrapedduck-ical-discord
+    command: ["python", "/app/discord_worker.py"]
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Berlin
+      CONFIG_FILE: /config/config.json
+      LOG_LEVEL: INFO
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
+      DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:-}
+      DISCORD_CHANNEL_IDS: ${DISCORD_CHANNEL_IDS:-}
+      DISCORD_ALLOWED_AUTHOR_IDS: ${DISCORD_ALLOWED_AUTHOR_IDS:-}
+    volumes:
+      - ./config.json:/config/config.json:ro
+      - scrapedduck_ical_data:/data
+    # Kein Port: der Worker ist von außen nicht erreichbar.
+    healthcheck:
+      test: ["CMD", "python", "/app/discord_worker.py", "--healthcheck"]
+      interval: 5m
+      timeout: 20s
+      start_period: 2m
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
 
 volumes:
   scrapedduck_ical_data:

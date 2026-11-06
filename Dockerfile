@@ -1,7 +1,13 @@
 FROM python:3.13-alpine
 
+# Tesseract für die lokale Texterkennung der Infografiken (Deutsch + Englisch)
+RUN apk add --no-cache tesseract-ocr tesseract-ocr-data-deu tesseract-ocr-data-eng
+
 WORKDIR /app
-COPY app.py /app/app.py
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+COPY app.py infographic_store.py infographic_manager.py event_matcher.py ocr.py discord_worker.py /app/
 COPY landing.html /app/landing.html
 COPY status.html /app/status.html
 COPY admin.html /app/admin.html
@@ -22,6 +28,8 @@ RUN addgroup -S app && adduser -S -G app app \
 USER app
 EXPOSE 8080
 
+# Healthcheck des Webservers. Der Discord-Worker überschreibt ihn in der
+# docker-compose.yml mit einer eigenen Prüfung.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://127.0.0.1:8080/health >/dev/null || exit 1
 

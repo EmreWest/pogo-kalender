@@ -63,5 +63,39 @@
     "max_events": 500,
     "login_attempts": 5,
     "login_window_seconds": 900
+  },
+  "infographics": {
+    "enabled": true,
+    "storage_dir": "/data/infographics",
+    "metadata_file": "/data/infographic-events.json",
+    "worker_state_file": "/data/discord-worker-state.json",
+    "max_file_size_mb": 15,
+    "allowed_extensions": [
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".webp"
+    ],
+    "poll_interval_seconds": 300,
+    "recheck_recent_messages": 25,
+    "historical_import": {
+      "enabled": true,
+      "message_limit": 100
+    },
+    "ocr": {
+      "enabled": true,
+      "languages": "deu+eng",
+      "timeout_seconds": 90
+    },
+    "matching": {
+      "auto_match_threshold": 80,
+      "manual_review_threshold": 50,
+      "min_margin": 15
+    },
+    "attribution": {
+      "creator": "G47IX",
+      "text": "Infografik von G47IX – mit freundlicher Genehmigung",
+      "source_url": "https://linktr.ee/g47ix"
+    }
   }
 }

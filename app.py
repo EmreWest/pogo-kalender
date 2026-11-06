@@ -25,6 +25,9 @@ from typing import Any
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+import infographic_store
+from infographic_manager import InfographicManager
+
 DEFAULT_CONFIG: dict[str, Any] = {
     "source_url": "https://raw.githubusercontent.com/bigfoott/ScrapedDuck/refs/heads/data/events.json",
     "calendar_name": "Pokémon GO – gefilterte Events",
@@ -62,6 +65,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "max_per_event": 3,
         "use_scrapedduck_images": True,
     },
+    "infographics": infographic_store.DEFAULT_SETTINGS,
     "filters": {
         "include_types": [],
         "exclude_types": ["go-battle-league", "season", "update"],
@@ -89,7 +93,7 @@ STATIC_ASSETS = {
     "/icon-512.png": (Path("/app/icon-512.png"), "image/png"),
     "/site.webmanifest": (Path("/app/site.webmanifest"), "application/manifest+json; charset=utf-8"),
 }
-SERVICE_VERSION = "1.6.0"
+SERVICE_VERSION = "1.7.0"
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 
 logging.basicConfig(
@@ -142,6 +146,7 @@ LOGIN_ATTEMPTS_LOCK = threading.Lock()
 LOGIN_ATTEMPTS: dict[str, list[float]] = {}
 ADMIN_COOKIE_NAME = "pogo_admin_session"
 DEFAULT_ADMIN_PASSWORD = "CHANGE-ME-NOW-2026!"
+INFOGRAPHICS = InfographicManager()
 
 DEFAULT_PHRASE_TRANSLATIONS: dict[str, str] = {
     "Pokémon Spotlight Hour": "Pokémon-Rampenlichtstunde",
@@ -455,6 +460,11 @@ def invalidate_calendar_cache() -> None:
 
 
 def admin_password(config: dict[str, Any]) -> str:
+    # ADMIN_PASSWORD (environment / .env) takes precedence, so the password
+    # does not have to live in config.json.
+    from_env = os.environ.get("ADMIN_PASSWORD", "").strip()
+    if from_env:
+        return from_env
     return str(manual_config(config).get("admin_password") or DEFAULT_ADMIN_PASSWORD)
 
 
@@ -1304,6 +1314,7 @@ def create_calendar(
         web_events.append({
             "id": event_id,
             "title": name,
+            "sourceTitle": str(event.get("name") or ""),
             "start": start.astimezone(local_tz).isoformat(),
             "end": end.astimezone(local_tz).isoformat(),
             "url": link,
@@ -1520,13 +1531,46 @@ def build_health_payload(config: dict[str, Any]) -> dict[str, Any]:
         "calendar_path": config.get("calendar_path"),
         "source_url": config.get("source_url"),
         "service_version": SERVICE_VERSION,
+        "infographics": infographic_health(config),
     }
 
 
+def infographic_health(config: dict[str, Any]) -> dict[str, Any]:
+    try:
+        return INFOGRAPHICS.health(config)
+    except Exception as exc:
+        return {"enabled": True, "error": str(exc)}
+
+
+def events_with_infographics(
+    config: dict[str, Any], web_events: list[dict[str, Any]], events_key: str | None
+) -> list[dict[str, Any]]:
+    """Attach matched infographics; any failure leaves the calendar untouched."""
+    try:
+        by_event = INFOGRAPHICS.refresh(config, web_events, events_key, pokemon_species_matches)
+        return INFOGRAPHICS.augment(web_events, by_event)
+    except Exception:
+        LOGGER.exception("Infografiken konnten nicht zugeordnet werden")
+        return web_events
+
+
+def current_web_events() -> list[dict[str, Any]]:
+    try:
+        return get_calendar()[4]
+    except Exception as exc:
+        LOGGER.warning("Events für die Infografik-Verwaltung nicht verfügbar: %s", exc)
+        return list(CACHE.get("web_events") or [])
+
+
 def build_api_payload(config: dict[str, Any], stale: bool, web_events: list[dict[str, Any]]) -> dict[str, Any]:
+    settings = infographic_store.infographic_settings(config)
     return {
         "events": web_events,
         "meta": {
+            "infographics": {
+                "enabled": settings["enabled"],
+                "attribution": settings["attribution"],
+            },
             "updatedAt": CACHE.get("last_success_at"),
             "lastAttemptAt": CACHE.get("last_attempt_at"),
             "stale": stale,
@@ -1647,6 +1691,34 @@ class CalendarHandler(BaseHTTPRequestHandler):
             self.send_bytes(200, payload, content_type, headers)
             return
 
+        if path.startswith("/infographic/"):
+            record_id = path.rsplit("/", 1)[-1]
+            _, session = self.authenticated_session()
+            try:
+                image = INFOGRAPHICS.image_file(initial_config, record_id, is_admin=bool(session))
+            except Exception:
+                LOGGER.exception("Infografik %s konnte nicht gelesen werden", record_id)
+                image = None
+            if image is None:
+                self.send_bytes(404, b"Image not found\n", "text/plain; charset=utf-8", {"Cache-Control": "no-store"})
+                return
+            payload, content_type = image
+            cache = "private, no-store" if session else "public, max-age=86400"
+            self.send_bytes(200, payload, content_type, {"Cache-Control": cache})
+            return
+
+        if path == "/api/admin/infographics":
+            if not self.require_admin():
+                return
+            try:
+                result = INFOGRAPHICS.admin_payload(initial_config, current_web_events())
+            except Exception as exc:
+                LOGGER.exception("Infografik-Übersicht fehlgeschlagen")
+                self.send_json(500, {"error": str(exc)}, {"Cache-Control": "no-store"})
+                return
+            self.send_json(200, result, {"Cache-Control": "no-store"})
+            return
+
         if path == "/health":
             payload = json.dumps(build_health_payload(initial_config), ensure_ascii=False).encode("utf-8")
             self.send_bytes(200, payload, "application/json; charset=utf-8", {"Cache-Control": "no-store"})
@@ -1722,7 +1794,7 @@ class CalendarHandler(BaseHTTPRequestHandler):
             return
 
         if path == "/api/events":
-            api_payload = build_api_payload(config, stale, web_events)
+            api_payload = build_api_payload(config, stale, events_with_infographics(config, web_events, etag))
             api_body = json.dumps(api_payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
             api_etag = '"' + hashlib.sha256(api_body).hexdigest() + '"'
             if self.headers.get("If-None-Match") == api_etag:
@@ -1824,7 +1896,66 @@ class CalendarHandler(BaseHTTPRequestHandler):
                 self.send_json(500, {"error": str(exc)}, {"Cache-Control": "no-store"})
             return
 
+        if path.startswith("/api/admin/infographics/"):
+            self.handle_infographic_action(path, config)
+            return
+
         self.send_json(404, {"error": "Nicht gefunden."}, {"Cache-Control": "no-store"})
+
+    def handle_infographic_action(self, path: str, config: dict[str, Any]) -> None:
+        if not self.require_admin(require_csrf=True):
+            return
+        headers = {"Cache-Control": "no-store"}
+        parts = path[len("/api/admin/infographics/"):].strip("/").split("/")
+        try:
+            payload = self.read_json_body(8192) if int(self.headers.get("Content-Length") or "0") > 0 else {}
+        except ValueError as exc:
+            self.send_json(400, {"error": str(exc)}, headers)
+            return
+        try:
+            if parts == ["cleanup"]:
+                mode = str(payload.get("mode") or "")
+                if mode not in ("rejected", "older"):
+                    raise ValueError("Unbekannter Aufräummodus.")
+                days = max(1, min(int(payload.get("older_than_days") or 120), 3650))
+                removed = INFOGRAPHICS.cleanup(config, mode, days)
+                self.send_json(200, {"ok": True, "removed": removed}, headers)
+                return
+            if len(parts) != 2:
+                raise KeyError(path)
+            record_id, action = parts
+            if action == "assign":
+                event_id = sanitize_text(payload.get("event_id"), 300, "Event", required=True)
+                events = {str(event.get("id")): event for event in current_web_events()}
+                if event_id not in events:
+                    try:
+                        manual = {str(event.get("id")): event for event in load_manual_events(config)}
+                    except Exception:
+                        manual = {}
+                    if event_id not in manual:
+                        raise ValueError("Das ausgewählte Event existiert nicht im Kalender.")
+                    title = str(manual[event_id].get("title") or event_id)
+                else:
+                    title = str(events[event_id].get("title") or event_id)
+                item = INFOGRAPHICS.assign(config, record_id, event_id, title)
+            elif action == "unassign":
+                item = INFOGRAPHICS.unassign(config, record_id)
+            elif action == "reject":
+                item = INFOGRAPHICS.reject(config, record_id)
+            elif action == "rematch":
+                item = INFOGRAPHICS.rematch(config, record_id)
+                INFOGRAPHICS.refresh(config, current_web_events(), None, pokemon_species_matches)
+                item = INFOGRAPHICS.store(config).get(record_id) or item
+            else:
+                raise KeyError(action)
+            self.send_json(200, {"ok": True, "status": (item.get("matching") or {}).get("status")}, headers)
+        except KeyError:
+            self.send_json(404, {"error": "Infografik oder Aktion nicht gefunden."}, headers)
+        except ValueError as exc:
+            self.send_json(400, {"error": str(exc)}, headers)
+        except Exception as exc:
+            LOGGER.exception("Infografik-Aktion fehlgeschlagen")
+            self.send_json(500, {"error": str(exc)}, headers)
 
     def do_PUT(self) -> None:
         path = urlsplit(self.path).path
@@ -1859,6 +1990,26 @@ class CalendarHandler(BaseHTTPRequestHandler):
 
     def do_DELETE(self) -> None:
         path = urlsplit(self.path).path
+        if path.startswith("/api/admin/infographics/"):
+            try:
+                config = load_config()
+            except Exception as exc:
+                self.send_json(503, {"error": f"Konfiguration nicht verfügbar: {exc}"})
+                return
+            if not self.require_admin(require_csrf=True):
+                return
+            record_id = path.rsplit("/", 1)[-1]
+            try:
+                removed = INFOGRAPHICS.delete(config, [record_id]) if infographic_store.valid_record_id(record_id) else 0
+            except Exception as exc:
+                LOGGER.exception("Infografik konnte nicht gelöscht werden")
+                self.send_json(500, {"error": str(exc)}, {"Cache-Control": "no-store"})
+                return
+            if not removed:
+                self.send_json(404, {"error": "Infografik nicht gefunden."}, {"Cache-Control": "no-store"})
+                return
+            self.send_json(200, {"ok": True}, {"Cache-Control": "no-store"})
+            return
         if not path.startswith("/api/admin/events/"):
             self.send_json(404, {"error": "Nicht gefunden."}, {"Cache-Control": "no-store"})
             return

@@ -1,0 +1,3 @@
+# Nur für die Bildvorbereitung der OCR (zweiter Tesseract-Durchgang).
+# Webserver, iCal-Feed und Discord-Worker kommen ohne Zusatzpakete aus.
+pillow>=11,<13

@@ -876,6 +876,80 @@
     .meta { margin: 15px 0; color: var(--muted); line-height: 1.55; }
     .description { white-space: pre-line; line-height: 1.6; }
 
+    .modal-infographics { margin-top: 20px; }
+    .modal-infographics[hidden] { display: none; }
+    .infographic-track {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 6px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .infographic-item {
+      flex: 0 0 100%;
+      scroll-snap-align: center;
+      margin: 0;
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--surface-2);
+      cursor: zoom-in;
+    }
+    .infographic-item img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 70vh;
+      object-fit: contain;
+    }
+    .infographic-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: .8rem;
+      font-weight: 800;
+    }
+    .infographic-nav[hidden] { display: none; }
+    .infographic-nav button {
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: var(--surface-2);
+      color: var(--text);
+      cursor: pointer;
+    }
+    .infographic-credit {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: .78rem;
+      line-height: 1.5;
+    }
+    .infographic-credit a { color: var(--brand); font-weight: 700; }
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      background: rgba(4, 9, 18, 0.92);
+      cursor: zoom-out;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 10px;
+    }
+
     .detail-link {
       display: inline-flex;
       margin-top: 18px;
@@ -1046,8 +1120,21 @@
       <div class="modal-pokemon" id="modal-pokemon" hidden></div>
       <div class="meta" id="modal-meta"></div>
       <div class="description" id="modal-description"></div>
+      <section class="modal-infographics" id="modal-infographics" hidden aria-label="Infografiken">
+        <div class="infographic-track" id="infographic-track"></div>
+        <div class="infographic-nav" id="infographic-nav" hidden>
+          <button type="button" id="infographic-prev" aria-label="Vorherige Infografik">‹</button>
+          <span id="infographic-counter"></span>
+          <button type="button" id="infographic-next" aria-label="Nächste Infografik">›</button>
+        </div>
+        <p class="infographic-credit" id="infographic-credit"></p>
+      </section>
       <a class="detail-link" id="modal-link" target="_blank" rel="noopener">Details bei LeekDuck</a>
     </article>
+  </div>
+
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Infografik vergrößert">
+    <img id="lightbox-image" alt="">
   </div>
 
   <script>
@@ -1694,12 +1781,96 @@
       if (event.isManual) metaParts.push("manuell eingetragen");
       document.getElementById("modal-meta").textContent = metaParts.join(" · ");
       document.getElementById("modal-description").textContent = event.description || "";
+      renderInfographics(event);
       const link = document.getElementById("modal-link");
       link.hidden = !event.url;
       link.href = event.url || "#";
       link.textContent = event.isManual ? "Weiterführenden Link öffnen" : "Details bei LeekDuck";
       document.getElementById("modal").classList.add("open");
       document.body.style.overflow = "hidden";
+    }
+
+    function renderInfographics(event) {
+      const section = document.getElementById("modal-infographics");
+      const track = document.getElementById("infographic-track");
+      const nav = document.getElementById("infographic-nav");
+      const credit = document.getElementById("infographic-credit");
+      track.replaceChildren();
+      credit.replaceChildren();
+      const items = Array.isArray(event.infographics) ? event.infographics.filter(item => item && item.url) : [];
+      section.hidden = !items.length;
+      nav.hidden = items.length < 2;
+      if (!items.length) return;
+      const attribution = (state.meta.infographics && state.meta.infographics.attribution) || {};
+      const creator = attribution.creator || "G47IX";
+      items.forEach((item, index) => {
+        const figure = document.createElement("button");
+        figure.type = "button";
+        figure.className = "infographic-item";
+        figure.setAttribute("aria-label", `Infografik ${index + 1} von ${creator} vergrößern`);
+        const img = document.createElement("img");
+        img.src = item.url;
+        img.alt = `Infografik von ${creator} zu ${event.title}`;
+        img.loading = "lazy";
+        img.decoding = "async";
+        if (item.width && item.height) { img.width = item.width; img.height = item.height; }
+        img.addEventListener("error", () => {
+          figure.remove();
+          const remaining = track.children.length;
+          if (!remaining) section.hidden = true;
+          nav.hidden = remaining < 2;
+          updateInfographicCounter();
+        });
+        figure.addEventListener("click", () => openLightbox(item.url, img.alt));
+        figure.appendChild(img);
+        track.appendChild(figure);
+      });
+      const text = document.createElement("span");
+      text.textContent = attribution.text || `Infografik von ${creator}`;
+      credit.appendChild(text);
+      const links = [];
+      const messageUrl = items.map(item => item.messageUrl).find(Boolean);
+      if (messageUrl) links.push(["Quelle: Discord", messageUrl]);
+      if (attribution.source_url) links.push([creator, attribution.source_url]);
+      for (const [label, href] of links) {
+        credit.appendChild(document.createTextNode(" · "));
+        const anchor = document.createElement("a");
+        anchor.href = href;
+        anchor.target = "_blank";
+        anchor.rel = "noopener noreferrer";
+        anchor.textContent = label;
+        credit.appendChild(anchor);
+      }
+      track.scrollLeft = 0;
+      updateInfographicCounter();
+    }
+
+    function updateInfographicCounter() {
+      const track = document.getElementById("infographic-track");
+      const count = track.children.length;
+      if (!count) return;
+      const index = Math.min(count - 1, Math.round(track.scrollLeft / Math.max(1, track.clientWidth)));
+      document.getElementById("infographic-counter").textContent = `${index + 1} / ${count}`;
+    }
+
+    function scrollInfographics(direction) {
+      const track = document.getElementById("infographic-track");
+      track.scrollBy({ left: direction * track.clientWidth, behavior: "smooth" });
+    }
+
+    function openLightbox(url, alt) {
+      const image = document.getElementById("lightbox-image");
+      image.src = url;
+      image.alt = alt || "";
+      document.getElementById("lightbox").classList.add("open");
+    }
+
+    function closeLightbox() {
+      const box = document.getElementById("lightbox");
+      if (!box.classList.contains("open")) return false;
+      box.classList.remove("open");
+      document.getElementById("lightbox-image").removeAttribute("src");
+      return true;
     }
 
     function closeModal() {
@@ -1748,8 +1919,14 @@
       if (event.target.id === "modal") closeModal();
     });
     document.addEventListener("keydown", event => {
-      if (event.key === "Escape") closeModal();
+      if (event.key === "Escape" && !closeLightbox()) closeModal();
     });
+    document.getElementById("lightbox").addEventListener("click", closeLightbox);
+    document.getElementById("infographic-prev").addEventListener("click", () => scrollInfographics(-1));
+    document.getElementById("infographic-next").addEventListener("click", () => scrollInfographics(1));
+    document.getElementById("infographic-track").addEventListener("scroll", () => {
+      window.requestAnimationFrame(updateInfographicCounter);
+    }, { passive: true });
 
     try {
       const savedView = localStorage.getItem("pogo-calendar-view");

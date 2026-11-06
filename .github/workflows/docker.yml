@@ -17,7 +17,23 @@ env:
   IMAGE: ghcr.io/${{ github.repository }}
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Tesseract installieren
+        run: sudo apt-get update -q && sudo apt-get install -y -q tesseract-ocr tesseract-ocr-deu tesseract-ocr-eng
+      - run: pip install -r requirements.txt
+      - name: Tests
+        env:
+          LOG_LEVEL: WARNING
+        run: python -m unittest discover -s tests -t . -v
+
   docker:
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -50,9 +66,28 @@ jobs:
           curl -fsS http://127.0.0.1:8080/health
           curl -fsS http://127.0.0.1:8080/pokemon-go-de.ics | grep -q "BEGIN:VCALENDAR"
           curl -fsS http://127.0.0.1:8080/ | grep -q "<html"
+          curl -fsS http://127.0.0.1:8080/api/events | grep -q '"infographics"'
           uid=$(docker exec probe awk '/^Uid:/ {print $2}' /proc/1/status)
           echo "Server läuft mit UID $uid"
           test "$uid" != "0"
+
+      - name: Tests im fertigen Image (inkl. Tesseract-OCR)
+        run: |
+          docker run --rm -v "$PWD/tests:/app/tests:ro" -w /app -e LOG_LEVEL=WARNING \
+            pogo-kalender:probe python -m unittest discover -s tests -t . -v
+
+      - name: Discord-Worker ohne Zugangsdaten startet im Leerlauf
+        run: |
+          docker volume create worker-probe
+          docker run -d --name worker -v worker-probe:/data -v "$PWD/config.json:/config/config.json:ro" \
+            pogo-kalender:probe python /app/discord_worker.py
+          sleep 5
+          docker logs worker 2>&1 | tee worker.log
+          grep -q "Fehlende Discord-Konfiguration" worker.log
+          test "$(docker inspect -f '{{.State.Running}}' worker)" = "true"
+          docker exec worker python /app/discord_worker.py --healthcheck
+          docker exec worker cat /data/discord-worker-state.json
+          docker rm -f worker
 
       - name: Tags bestimmen
         id: meta
@@ -66,7 +101,7 @@ jobs:
             type=sha,format=short
           labels: |
             org.opencontainers.image.title=Pokémon-GO-Eventkalender
-            org.opencontainers.image.description=Pokémon-GO-Eventkalender (ScrapedDuck) mit Webansicht, iCal-Feed und manuellen Events
+            org.opencontainers.image.description=Pokémon-GO-Eventkalender (ScrapedDuck) mit Webansicht, iCal-Feed, manuellen Events und G47IX-Infografiken
 
       - name: Bei GitHub Container Registry anmelden
         if: github.event_name != 'pull_request'

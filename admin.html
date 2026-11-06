@@ -123,6 +123,36 @@
     .status-line { margin-top: 12px; min-height: 20px; color: var(--muted); font-size: .8rem; }
     .status-line.error { color: var(--danger); }
     .status-line.success { color: var(--success); }
+    .infographics-panel { margin-top: 20px; }
+    .head-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .head-actions select { width: auto; min-height: 35px; padding: 6px 10px; font-size: .8rem; }
+    .worker-line { margin: -6px 0 16px; color: var(--muted); font-size: .78rem; line-height: 1.5; }
+    .worker-line.error { color: var(--danger); }
+    .infographic-list { display: grid; gap: 12px; }
+    .infographic-card {
+      display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px;
+      border: 1px solid var(--line); border-radius: 15px; background: var(--surface-2); padding: 14px;
+    }
+    .infographic-thumb {
+      display: block; width: 150px; aspect-ratio: 1 / 1; border-radius: 11px; overflow: hidden;
+      background: var(--surface-3); border: 1px solid var(--line);
+    }
+    .infographic-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .infographic-thumb.missing { display: grid; place-items: center; color: var(--muted); font-size: .72rem; text-align: center; padding: 8px; }
+    .infographic-body { min-width: 0; display: grid; gap: 9px; align-content: start; }
+    .infographic-head { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .status-pill { padding: 5px 9px; border-radius: 999px; font-size: .7rem; font-weight: 900; background: var(--surface-3); color: var(--muted); }
+    .status-pill.matched { background: color-mix(in srgb, var(--success) 16%, var(--surface)); color: var(--success); }
+    .status-pill.manual_review { background: color-mix(in srgb, var(--warning) 18%, var(--surface)); color: var(--warning); }
+    .status-pill.rejected, .status-pill.error { background: color-mix(in srgb, var(--danger) 14%, var(--surface)); color: var(--danger); }
+    .infographic-event { margin: 0; font-size: .95rem; line-height: 1.35; }
+    .candidate-list { display: flex; gap: 7px; flex-wrap: wrap; }
+    .candidate-list .button { min-height: 32px; font-size: .74rem; }
+    .assign-row { display: flex; gap: 8px; }
+    .assign-row select { min-width: 0; flex: 1; padding: 8px 10px; font-size: .8rem; }
+    .infographic-actions { display: flex; gap: 7px; flex-wrap: wrap; }
+    details.ocr { font-size: .74rem; color: var(--muted); }
+    details.ocr pre { white-space: pre-wrap; word-break: break-word; max-height: 220px; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
     .footer { padding-top: 20px; color: var(--muted); font-size: .77rem; text-align: center; }
     @media (max-width: 840px) {
       .page { width: min(100% - 18px, 1180px); padding-top: 9px; }
@@ -136,6 +166,9 @@
       .event-card-head { flex-direction: column; }
       .event-actions { width: 100%; }
       .event-actions .button { flex: 1; }
+      .infographic-card { grid-template-columns: 1fr; }
+      .infographic-thumb { width: 100%; max-width: 320px; }
+      .section-head { flex-direction: column; }
     }
   </style>
 </head>
@@ -145,7 +178,7 @@
       <div class="brand">
         <img src="/favicon.svg" alt="" width="46" height="46">
         <div>
-          <h1>Manuelle Events verwalten</h1>
+          <h1>Events &amp; Infografiken verwalten</h1>
           <p class="subtitle">Passwortgeschützter Bereich des Pokémon-GO-Kalenders</p>
         </div>
       </div>
@@ -159,7 +192,7 @@
       <article class="panel login-card">
         <img class="login-icon" src="/favicon.svg" alt="" width="68" height="68">
         <h2>Anmelden</h2>
-        <p>Für diesen Bereich ist nur das in der <code>config.json</code> hinterlegte Passwort erforderlich.</p>
+        <p>Für diesen Bereich ist nur das Admin-Passwort erforderlich (<code>ADMIN_PASSWORD</code> oder <code>config.json</code>).</p>
         <form class="login-form" id="login-form">
           <label class="field">
             <span>Passwort</span>
@@ -174,7 +207,7 @@
 
     <section class="dashboard" id="dashboard" hidden>
       <div class="notice" id="default-password-warning" hidden>
-        Du verwendest noch das mitgelieferte Standardpasswort. Ändere <code>manual_events.admin_password</code> in der <code>config.json</code> und starte den Container anschließend neu.
+        Du verwendest noch das mitgelieferte Standardpasswort. Setze <code>ADMIN_PASSWORD</code> in der <code>.env</code> (oder <code>manual_events.admin_password</code> in der <code>config.json</code>) und starte den Container anschließend neu.
       </div>
 
       <div class="dashboard-grid">
@@ -261,13 +294,41 @@
           <div class="events-list" id="events-list"></div>
         </article>
       </div>
+
+      <article class="panel infographics-panel" id="infographics-panel">
+        <div class="section-head">
+          <div>
+            <h2>Infografiken (G47IX)</h2>
+            <p id="infographic-summary">Wird geladen …</p>
+          </div>
+          <div class="head-actions">
+            <select id="infographic-filter" aria-label="Infografiken filtern">
+              <option value="open">Zu prüfen &amp; offen</option>
+              <option value="all">Alle</option>
+              <option value="manual_review">Zu prüfen</option>
+              <option value="pending">Offen</option>
+              <option value="matched">Zugeordnet</option>
+              <option value="rejected">Abgelehnt</option>
+              <option value="error">Fehler</option>
+            </select>
+            <button class="button secondary small" id="refresh-infographics" type="button">Aktualisieren</button>
+          </div>
+        </div>
+        <div class="worker-line" id="worker-line"></div>
+        <div class="infographic-list" id="infographic-list"></div>
+        <div class="form-actions">
+          <button class="button secondary small" id="cleanup-rejected" type="button">Abgelehnte löschen</button>
+          <button class="button secondary small" id="cleanup-older" type="button">Älter als 120 Tage löschen</button>
+        </div>
+        <div class="status-line" id="infographic-status" role="status"></div>
+      </article>
     </section>
 
     <footer class="footer">Die Anmeldung gilt nur für dieses Gerät und läuft automatisch ab.</footer>
   </main>
 
   <script>
-    const state = { csrf: null, events: [], editingId: null };
+    const state = { csrf: null, events: [], editingId: null, infographics: null };
     const loginWrap = document.getElementById("login-wrap");
     const dashboard = document.getElementById("dashboard");
     const logoutButton = document.getElementById("logout");
@@ -319,6 +380,7 @@
       logoutButton.hidden = false;
       document.getElementById("default-password-warning").hidden = !session.passwordIsDefault;
       loadEvents();
+      loadInfographics();
     }
     function setDefaultTimes() {
       const now = new Date();
@@ -466,6 +528,236 @@
       }
     }
 
+    const statusLabels = {
+      pending: "Offen", matched: "Zugeordnet", manual_review: "Zu prüfen", rejected: "Abgelehnt", error: "Fehler"
+    };
+    const workerLabels = {
+      ok: "läuft", degraded: "teilweise gestört", error: "Fehler", disabled: "deaktiviert",
+      unconfigured: "nicht konfiguriert", unknown: "noch nicht gestartet"
+    };
+    function setInfographicStatus(message, kind = "") {
+      const element = document.getElementById("infographic-status");
+      element.textContent = message;
+      element.className = `status-line ${kind}`.trim();
+    }
+    function formatShort(value) {
+      if (!value) return "–";
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? "–" : formatDateTime.format(date);
+    }
+    function eventLabel(event) {
+      const start = new Date(event.start);
+      const day = Number.isNaN(start.getTime()) ? "" : formatDate.format(start);
+      return `${day} · ${event.title}${event.isManual ? " (manuell)" : ""}`;
+    }
+    function makeButton(label, className, handler) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `button small ${className}`.trim();
+      button.textContent = label;
+      button.addEventListener("click", handler);
+      return button;
+    }
+    async function infographicAction(item, action, body = {}) {
+      try {
+        await request(`/api/admin/infographics/${encodeURIComponent(item.id)}/${action}`, {
+          method: "POST", body: JSON.stringify(body)
+        });
+        setInfographicStatus("Gespeichert.", "success");
+        await loadInfographics();
+      } catch (error) {
+        setInfographicStatus(error.message, "error");
+      }
+    }
+    async function deleteInfographic(item) {
+      if (!confirm("Diese Infografik endgültig löschen? Sie wird auch nicht erneut importiert.")) return;
+      try {
+        await request(`/api/admin/infographics/${encodeURIComponent(item.id)}`, { method: "DELETE" });
+        setInfographicStatus("Infografik wurde gelöscht.", "success");
+        await loadInfographics();
+      } catch (error) {
+        setInfographicStatus(error.message, "error");
+      }
+    }
+    async function cleanupInfographics(mode) {
+      const question = mode === "rejected"
+        ? "Alle abgelehnten Infografiken löschen?"
+        : "Alle Infografiken löschen, die älter als 120 Tage sind?";
+      if (!confirm(question)) return;
+      try {
+        const result = await request("/api/admin/infographics/cleanup", {
+          method: "POST", body: JSON.stringify({ mode, older_than_days: 120 })
+        });
+        setInfographicStatus(`${result.removed} Infografik(en) gelöscht.`, "success");
+        await loadInfographics();
+      } catch (error) {
+        setInfographicStatus(error.message, "error");
+      }
+    }
+    function renderInfographicCard(item, events) {
+      const card = document.createElement("article");
+      card.className = "infographic-card";
+
+      const thumb = document.createElement(item.fileExists ? "a" : "div");
+      thumb.className = item.fileExists ? "infographic-thumb" : "infographic-thumb missing";
+      if (item.fileExists) {
+        thumb.href = item.imageUrl;
+        thumb.target = "_blank";
+        thumb.rel = "noopener";
+        const img = document.createElement("img");
+        img.src = item.imageUrl;
+        img.alt = item.originalFilename || "Infografik";
+        img.loading = "lazy";
+        thumb.appendChild(img);
+      } else {
+        thumb.textContent = item.downloadError ? `Download fehlgeschlagen: ${item.downloadError}` : "Bilddatei fehlt";
+      }
+
+      const body = document.createElement("div");
+      body.className = "infographic-body";
+      const head = document.createElement("div");
+      head.className = "infographic-head";
+      const pill = document.createElement("span");
+      pill.className = `status-pill ${item.status}`;
+      pill.textContent = statusLabels[item.status] || item.status;
+      head.appendChild(pill);
+      [
+        `${item.score} Punkte`,
+        item.method === "manual" ? "manuell" : (item.method === "auto" ? "automatisch" : ""),
+        `gepostet ${formatShort(item.postedAt)}`,
+        item.ocrStatus === "done" ? "OCR ✓" : (item.ocrStatus ? `OCR: ${item.ocrStatus}` : "")
+      ].filter(Boolean).forEach(text => {
+        const tag = document.createElement("span");
+        tag.className = "pill";
+        tag.textContent = text;
+        head.appendChild(tag);
+      });
+      body.appendChild(head);
+
+      const title = document.createElement("h3");
+      title.className = "infographic-event";
+      title.textContent = item.eventId ? `→ ${item.eventTitle || item.eventId}` : "Noch keinem Event zugeordnet";
+      body.appendChild(title);
+
+      const meta = document.createElement("div");
+      meta.className = "event-meta";
+      const features = item.features || {};
+      const recognised = [
+        (features.ranges || []).map(range => `${range[0]} – ${range[1]}`).join(", ") || (features.dates || []).join(", "),
+        (features.times || []).join(", "),
+        (features.pokemon || []).join(", "),
+        (features.types || []).join(", ")
+      ].filter(Boolean).join(" · ");
+      meta.textContent = [
+        item.reasons && item.reasons.length ? `Begründung: ${item.reasons.join(", ")}` : "",
+        recognised ? `Erkannt: ${recognised}` : "",
+        item.originalFilename ? `Datei: ${item.originalFilename}` : ""
+      ].filter(Boolean).join(" | ");
+      body.appendChild(meta);
+
+      const candidates = (item.candidates || []).filter(c => c.event_id !== item.eventId).slice(0, 4);
+      if (candidates.length && item.status !== "rejected") {
+        const list = document.createElement("div");
+        list.className = "candidate-list";
+        candidates.forEach(candidate => {
+          list.appendChild(makeButton(
+            `Zuordnen: ${candidate.title} (${candidate.score})`,
+            "secondary",
+            () => infographicAction(item, "assign", { event_id: candidate.event_id })
+          ));
+        });
+        body.appendChild(list);
+      }
+
+      const assignRow = document.createElement("div");
+      assignRow.className = "assign-row";
+      const select = document.createElement("select");
+      select.setAttribute("aria-label", "Event für diese Infografik wählen");
+      const placeholder = document.createElement("option");
+      placeholder.value = "";
+      placeholder.textContent = "Andere Zuordnung wählen …";
+      select.appendChild(placeholder);
+      events.forEach(event => {
+        const option = document.createElement("option");
+        option.value = event.id;
+        option.textContent = eventLabel(event);
+        if (event.id === item.eventId) option.selected = true;
+        select.appendChild(option);
+      });
+      assignRow.append(select, makeButton("Zuordnen", "", () => {
+        if (!select.value) { setInfographicStatus("Bitte zuerst ein Event auswählen.", "error"); return; }
+        infographicAction(item, "assign", { event_id: select.value });
+      }));
+      body.appendChild(assignRow);
+
+      const actions = document.createElement("div");
+      actions.className = "infographic-actions";
+      if (item.eventId) actions.appendChild(makeButton("Zuordnung entfernen", "secondary", () => infographicAction(item, "unassign")));
+      if (item.status !== "rejected") actions.appendChild(makeButton("Ablehnen", "secondary", () => infographicAction(item, "reject")));
+      actions.appendChild(makeButton("Automatisch neu bewerten", "secondary", () => infographicAction(item, "rematch")));
+      if (item.messageUrl) {
+        const link = document.createElement("a");
+        link.className = "button secondary small";
+        link.href = item.messageUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "Discord";
+        actions.appendChild(link);
+      }
+      actions.appendChild(makeButton("Löschen", "danger", () => deleteInfographic(item)));
+      body.appendChild(actions);
+
+      if (item.content || item.ocrText) {
+        const details = document.createElement("details");
+        details.className = "ocr";
+        const summary = document.createElement("summary");
+        summary.textContent = "Nachrichtentext und OCR anzeigen";
+        const pre = document.createElement("pre");
+        pre.textContent = [item.content ? `Nachricht:\n${item.content}` : "", item.ocrText ? `OCR:\n${item.ocrText}` : ""]
+          .filter(Boolean).join("\n\n");
+        details.append(summary, pre);
+        body.appendChild(details);
+      }
+
+      card.append(thumb, body);
+      return card;
+    }
+    function renderInfographics() {
+      const data = state.infographics;
+      const list = document.getElementById("infographic-list");
+      list.replaceChildren();
+      if (!data) return;
+      const summary = data.summary || {};
+      document.getElementById("infographic-summary").textContent = data.enabled
+        ? `${data.items.length} Infografiken · ${summary.manual_review || 0} zu prüfen · ${summary.pending || 0} offen · ${summary.matched || 0} zugeordnet · Schwellen: automatisch ab ${data.thresholds.auto}, Prüfung ab ${data.thresholds.review} Punkten`
+        : "Die Infografik-Funktion ist in der config.json deaktiviert.";
+      const worker = data.worker || {};
+      const workerLine = document.getElementById("worker-line");
+      workerLine.className = `worker-line ${["error", "degraded"].includes(worker.status) ? "error" : ""}`.trim();
+      workerLine.textContent = `Discord-Worker: ${workerLabels[worker.status] || worker.status}`
+        + (worker.lastPollAt ? ` · letzter Abruf ${formatShort(worker.lastPollAt)}` : "")
+        + (worker.lastError ? ` · ${worker.lastError}` : "");
+      const filter = document.getElementById("infographic-filter").value;
+      const items = data.items.filter(item => filter === "all"
+        || (filter === "open" ? ["manual_review", "pending", "error"].includes(item.status) : item.status === filter));
+      if (!items.length) {
+        const empty = document.createElement("div");
+        empty.className = "events-empty";
+        empty.textContent = data.items.length ? "Keine Infografiken in dieser Ansicht." : "Noch keine Infografiken importiert.";
+        list.appendChild(empty);
+        return;
+      }
+      items.forEach(item => list.appendChild(renderInfographicCard(item, data.events || [])));
+    }
+    async function loadInfographics() {
+      try {
+        state.infographics = await request("/api/admin/infographics");
+        renderInfographics();
+      } catch (error) {
+        document.getElementById("infographic-summary").textContent = error.message;
+      }
+    }
+
     document.getElementById("login-form").addEventListener("submit", async event => {
       event.preventDefault();
       const button = document.getElementById("login-button");
@@ -507,6 +799,10 @@
     allDay.addEventListener("change", () => updateDateInputMode(true));
     document.getElementById("cancel-edit").addEventListener("click", resetForm);
     document.getElementById("refresh-events").addEventListener("click", loadEvents);
+    document.getElementById("refresh-infographics").addEventListener("click", loadInfographics);
+    document.getElementById("infographic-filter").addEventListener("change", renderInfographics);
+    document.getElementById("cleanup-rejected").addEventListener("click", () => cleanupInfographics("rejected"));
+    document.getElementById("cleanup-older").addEventListener("click", () => cleanupInfographics("older"));
     logoutButton.addEventListener("click", async () => {
       try { await request("/api/admin/logout", { method: "POST", body: "{}" }); } catch (_) {}
       showLogin();
