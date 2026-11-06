@@ -456,7 +456,9 @@ def manual_event_for_admin(event: dict[str, Any]) -> dict[str, Any]:
 
 def invalidate_calendar_cache() -> None:
     with CACHE_LOCK:
-        CACHE["created_monotonic"] = 0.0
+        # -inf instead of 0.0: time.monotonic() can be smaller than cache_seconds
+        # shortly after the host boots, which would keep the old cache alive.
+        CACHE["created_monotonic"] = float("-inf")
 
 
 def admin_password(config: dict[str, Any]) -> str:
