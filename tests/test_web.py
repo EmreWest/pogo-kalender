@@ -83,7 +83,7 @@ class Client:
         self.csrf = json.loads(payload)["csrf"]
 
 
-class WebTest(unittest.TestCase):
+class WebBase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.data_dir = helpers.fresh_data_dir("web")
@@ -138,6 +138,8 @@ class WebTest(unittest.TestCase):
         self.assertEqual(status, 200)
         return {event["id"]: event for event in payload["events"]}
 
+
+class WebTest(WebBase):
     # --- existing features --------------------------------------------------
     def test_20_existing_calendar_and_ical_still_work(self) -> None:
         status, headers, body = self.client.request("GET", "/")
@@ -314,3 +316,68 @@ class WebTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FeaturedTest(WebBase):
+    """Weekly overview, Rocket line-up and news outside of single events."""
+
+    def featured(self) -> dict:
+        status, payload = self.client.json("GET", "/api/events")
+        self.assertEqual(status, 200)
+        return payload["meta"]["featured"]
+
+    def test_general_graphics_are_featured(self) -> None:
+        from datetime import datetime, timedelta, timezone
+
+        now = datetime.now(timezone.utc)
+        monday = (now - timedelta(days=now.weekday())).date()
+        sunday = monday + timedelta(days=6)
+        months = ["JANUAR", "FEBRUAR", "MÄRZ", "APRIL", "MAI", "JUNI", "JULI", "AUGUST", "SEPTEMBER", "OKTOBER", "NOVEMBER", "DEZEMBER"]
+        weekly_text = (f"{monday.day}. {months[monday.month - 1]} - {sunday.day}. {months[sunday.month - 1]}\n"
+                       "MONTAG DIENSTAG MITTWOCH DONNERSTAG FREITAG SAMSTAG SONNTAG")
+        posted = (now - timedelta(days=1)).isoformat()
+        weekly = self.seed("1300000000000002000", ocr_text=weekly_text, posted=posted)
+        rocket = self.seed("1300000000000002001", ocr_text="ÜBER-NAHME STARTET AM 2. OKT 910 WP", posted=posted)
+        news = self.seed("1300000000000002002", ocr_text="Spielqualität Updates Entdecker-Gadget", posted=posted)
+        old_news = self.seed("1300000000000002003", ocr_text="GO-Pass: Oktober", posted=(now - timedelta(days=40)).isoformat())
+
+        featured = self.featured()
+        self.assertEqual([item["id"] for item in featured["weekly"]], [weekly])
+        self.assertEqual(featured["weekly"][0]["validFrom"], monday.isoformat())
+        self.assertEqual(featured["rocket"]["id"], rocket)
+        self.assertEqual([item["id"] for item in featured["news"]], [news])
+        self.assertNotIn(old_news, [item["id"] for item in featured["news"]])
+        self.assertTrue(all("infographics" not in event for event in self.api_events().values()))
+        self.assertEqual(self.client.request("GET", f"/infographic/{weekly}")[0], 200)
+
+    def test_event_graphic_mentioning_go_pass_stays_event(self) -> None:
+        record_id = self.seed("1300000000000002100", ocr_text="4. NOV - 8. NOV\nGIRATINA\nSchwäche\nGO-Pass Deluxe 5,49€")
+        self.featured()
+        stored = self.store.get(record_id)
+        self.assertEqual(stored["category"]["value"], "event")
+        self.assertEqual(stored["matching"]["status"], "matched")
+
+    def test_newer_rocket_lineup_replaces_older(self) -> None:
+        from datetime import datetime, timedelta, timezone
+
+        now = datetime.now(timezone.utc)
+        self.seed("1300000000000002200", ocr_text="Team GO Rocket Übernahme", posted=(now - timedelta(days=20)).isoformat())
+        newest = self.seed("1300000000000002201", ocr_text="Giovanni Sierra Cliff Arlo", posted=(now - timedelta(days=2)).isoformat())
+        self.assertEqual(self.featured()["rocket"]["id"], newest)
+
+    def test_admin_changes_category(self) -> None:
+        record_id = self.seed("1300000000000002300", content="Hallo zusammen")
+        self.featured()
+        self.assertEqual(self.store.get(record_id)["category"]["value"], "event")
+        self.client.login()
+        status, result = self.client.json("POST", f"/api/admin/infographics/{record_id}/category", {"category": "news"})
+        self.assertEqual((status, result["status"]), (200, "matched"))
+        stored = self.store.get(record_id)
+        self.assertEqual((stored["category"]["value"], stored["category"]["method"]), ("news", "manual"))
+        self.assertIn(record_id, [item["id"] for item in self.featured()["news"]])
+        status, overview = self.client.json("GET", "/api/admin/infographics")
+        self.assertEqual(next(i for i in overview["items"] if i["id"] == record_id)["category"], "news")
+        # Back to event: matched against events again, stays unplaced here
+        self.client.json("POST", f"/api/admin/infographics/{record_id}/category", {"category": "event"})
+        self.assertEqual(self.featured()["news"], [])
+        self.assertEqual(self.client.json("POST", f"/api/admin/infographics/{record_id}/category", {"category": "quatsch"})[0], 400)

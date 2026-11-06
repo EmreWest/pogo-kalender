@@ -22,6 +22,7 @@ from typing import Any, Iterator
 STORE_VERSION = 1
 RECORD_ID_PATTERN = re.compile(r"[0-9]{5,25}-[0-9a-z]{1,40}")
 MATCH_STATUSES = ("pending", "matched", "manual_review", "rejected", "error")
+CATEGORIES = ("event", "weekly", "rocket", "news")
 MAX_SKIPPED_ENTRIES = 3000
 MAX_DELETED_ENTRIES = 5000
 
@@ -82,6 +83,12 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         "creator": "G47IX",
         "text": "Infografik von G47IX – mit freundlicher Genehmigung",
         "source_url": "https://linktr.ee/g47ix",
+    },
+    "featured": {
+        "weekly_lead_days": 3,
+        "rocket_max_age_days": 60,
+        "news_days": 14,
+        "news_max_items": 6,
     },
 }
 
@@ -178,6 +185,14 @@ def infographic_settings(config: dict[str, Any] | None) -> dict[str, Any]:
         "min_margin": _clamp_int(matching.get("min_margin"), 15, 0, 100),
         "max_candidates": _clamp_int(matching.get("max_candidates"), 5, 1, 20),
         "title_glossary": clean_glossary,
+    }
+
+    featured = settings.get("featured") if isinstance(settings.get("featured"), dict) else {}
+    settings["featured"] = {
+        "weekly_lead_days": _clamp_int(featured.get("weekly_lead_days"), 3, 0, 14),
+        "rocket_max_age_days": _clamp_int(featured.get("rocket_max_age_days"), 60, 1, 365),
+        "news_days": _clamp_int(featured.get("news_days"), 14, 1, 365),
+        "news_max_items": _clamp_int(featured.get("news_max_items"), 6, 1, 20),
     }
 
     attribution = settings.get("attribution") if isinstance(settings.get("attribution"), dict) else {}

@@ -495,3 +495,111 @@ def match_infographic(
         elif best["score"] >= auto_threshold:
             result["reasons"] = result["reasons"] + ["kein Datum erkannt"]
     return result
+
+
+# ---------------------------------------------------------------------------
+# Categories for infographics that do not belong to a single event
+# ---------------------------------------------------------------------------
+
+CATEGORIES = ("event", "weekly", "rocket", "news")
+WEEKDAYS_DE = ("montag", "dienstag", "mittwoch", "donnerstag", "freitag", "samstag", "sonntag")
+WEEKDAYS_EN = ("monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday")
+WEEKLY_KEYWORDS = ("go weekly", "goweekly", "wochenübersicht", "wochenvorschau", "diese woche", "this week", "weekly")
+ROCKET_PATTERNS = (
+    r"über\s*-?\s*nahme", r"\bnahme\b", r"takeover", r"team\s*go\s*rocket", r"\brocket\b",
+    r"giovanni", r"\bsierra\b", r"\bcliff\b", r"\barlo\b", r"rüpel", r"\bgrunt", r"anführer",
+)
+NEWS_KEYWORDS = (
+    "go-pass", "go pass", "spielqualität", "quality of life", "update", "saison", "season",
+    "ankündigung", "announcement", "neuerung", "neue funktion", "new feature",
+)
+
+
+def _weekly_info(ranges: list[tuple[date, date]], reference: date, reason: str) -> dict[str, Any]:
+    week_ranges = [r for r in ranges if 5 <= (r[1] - r[0]).days <= 7]
+    if week_ranges:
+        start, end = min(week_ranges, key=lambda r: abs((r[0] - reference).days))
+        detail = "Wochenzeitraum erkannt"
+    else:
+        # Weekly previews are usually posted at the weekend before the week.
+        start = reference - timedelta(days=reference.weekday())
+        if reference.weekday() >= 4:
+            start += timedelta(days=7)
+        end = start + timedelta(days=6)
+        detail = "Woche aus dem Postdatum abgeleitet"
+    return {
+        "category": "weekly",
+        "valid_from": start.isoformat(),
+        "valid_until": (end + timedelta(days=1)).isoformat(),
+        "label": f"Wochenübersicht {start:%d.%m.}–{end:%d.%m.}",
+        "reasons": [reason, detail],
+    }
+
+
+def _rocket_info(normalized: str, reference: date, reason: str) -> dict[str, Any]:
+    valid_from = reference
+    start_match = re.search(rf"(?:startet|ab|beginnt|starts?)\s+(?:am\s+)?((?:{DAY_RE})\.?\s*{MONTH_RE})", normalized)
+    if start_match:
+        start_dates = extract_dates(start_match.group(1), reference)[1]
+        if start_dates:
+            valid_from = min(start_dates)
+    return {
+        "category": "rocket",
+        "valid_from": valid_from.isoformat(),
+        "valid_until": None,
+        "label": "Team GO Rocket",
+        "reasons": [reason],
+    }
+
+
+def _news_info(reference: date, reason: str) -> dict[str, Any]:
+    return {
+        "category": "news",
+        "valid_from": reference.isoformat(),
+        "valid_until": None,
+        "label": "Neuigkeit",
+        "reasons": [reason],
+    }
+
+
+def category_info(category: str, text: str, posted_at: datetime, local_tz: tzinfo) -> dict[str, Any]:
+    """Validity window and label for a category chosen manually in the admin."""
+    normalized = normalize_text(text)
+    reference = posted_at.astimezone(local_tz).date()
+    if category == "weekly":
+        return _weekly_info(extract_dates(text, reference)[0], reference, "manuell gewählt")
+    if category == "rocket":
+        return _rocket_info(normalized, reference, "manuell gewählt")
+    if category == "news":
+        return _news_info(reference, "manuell gewählt")
+    return {"category": "event", "valid_from": None, "valid_until": None, "label": None, "reasons": ["manuell gewählt"]}
+
+
+def classify_infographic(text: str, posted_at: datetime, local_tz: tzinfo) -> dict[str, Any]:
+    """Decide whether an infographic is an event graphic or a general one.
+
+    Weekly overviews and Team GO Rocket graphics are recognised directly.
+    Event graphics often mention the GO Pass or updates in passing, so a news
+    keyword only yields ``news_fallback``; the caller uses it when no calendar
+    event fits.
+    """
+    normalized = normalize_text(text)
+    reference = posted_at.astimezone(local_tz).date()
+    ranges, _dates = extract_dates(text, reference)
+
+    weekdays = sum(1 for day in WEEKDAYS_DE + WEEKDAYS_EN if re.search(rf"\b{day}\b", normalized))
+    if weekdays >= 5:
+        return _weekly_info(ranges, reference, f"Wochentage erkannt ({weekdays}/7)")
+    if any(keyword in normalized for keyword in WEEKLY_KEYWORDS):
+        return _weekly_info(ranges, reference, "Stichwort Wochenübersicht")
+    if any(re.search(pattern, normalized) for pattern in ROCKET_PATTERNS):
+        return _rocket_info(normalized, reference, "Team-GO-Rocket-Stichwort erkannt")
+    is_news = any(keyword in normalized for keyword in NEWS_KEYWORDS)
+    return {
+        "category": "event",
+        "valid_from": None,
+        "valid_until": None,
+        "label": None,
+        "reasons": [],
+        "news_fallback": _news_info(reference, "Update-/News-Stichwort erkannt") if is_news else None,
+    }

@@ -10,12 +10,13 @@ from __future__ import annotations
 
 import logging
 import threading
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any, Callable
 from zoneinfo import ZoneInfo
 
 import event_matcher
 from infographic_store import (
+    CATEGORIES,
     InfographicStore,
     infographic_settings,
     read_json_file,
@@ -48,7 +49,7 @@ def record_text(item: dict[str, Any]) -> str:
 class InfographicManager:
     def __init__(self) -> None:
         self._lock = threading.Lock()
-        self._cache: dict[str, Any] = {"key": None, "mtime": None, "by_event": {}}
+        self._cache: dict[str, Any] = {"key": None, "mtime": None, "by_event": {}, "featured": []}
 
     # -- helpers -----------------------------------------------------------
     @staticmethod
@@ -66,8 +67,13 @@ class InfographicManager:
     def public_item(item: dict[str, Any], attribution: dict[str, Any]) -> dict[str, Any]:
         discord = item.get("discord") or {}
         attachment = item.get("attachment") or {}
+        category = item.get("category") or {}
         return {
             "id": item["id"],
+            "category": category.get("value") or "event",
+            "label": category.get("label"),
+            "validFrom": category.get("valid_from"),
+            "validUntil": category.get("valid_until"),
             "url": f"/infographic/{item['id']}",
             "width": attachment.get("width"),
             "height": attachment.get("height"),
@@ -91,6 +97,65 @@ class InfographicManager:
             # of the calendar window (past event) keeps its infographic.
             return False
         return True
+
+    @staticmethod
+    def _set_category(item: dict[str, Any], info: dict[str, Any], method: str) -> bool:
+        new = {
+            "value": info["category"],
+            "method": method,
+            "valid_from": info.get("valid_from"),
+            "valid_until": info.get("valid_until"),
+            "label": info.get("label"),
+            "reasons": list(info.get("reasons") or []),
+        }
+        if item.get("category") == new:
+            return False
+        item["category"] = new
+        return True
+
+    @staticmethod
+    def _place_general(item: dict[str, Any], info: dict[str, Any], locked: bool) -> bool:
+        """Mark a weekly/rocket/news graphic as placed (no event assignment)."""
+        matching = item.setdefault("matching", {})
+        new_values = {
+            "status": "matched",
+            "event_id": None,
+            "event_title": info.get("label"),
+            "score": 0,
+            "reasons": list(info.get("reasons") or []),
+            "candidates": [],
+            "method": "manual" if locked else "auto",
+            "locked": locked,
+        }
+        changed = any(matching.get(key) != value for key, value in new_values.items()) or matching.get("needs_rematch")
+        if changed:
+            matching.update(new_values)
+            matching.pop("needs_rematch", None)
+            matching["updated_at"] = utc_now_iso()
+            item["updated_at"] = utc_now_iso()
+        return bool(changed)
+
+    def _evaluate(self, item: dict[str, Any], web_events: list[dict[str, Any]], settings: dict[str, Any],
+                  species_lookup: SpeciesLookup, local_tz: Any) -> None:
+        posted = parse_timestamp((item.get("discord") or {}).get("posted_at")) or datetime.now(timezone.utc)
+        text = record_text(item)
+        category = item.get("category") or {}
+        if category.get("method") == "manual" and category.get("value") == "event":
+            self._apply_result(item, event_matcher.match_infographic(text, posted, web_events, settings, species_lookup, local_tz))
+            return
+        info = event_matcher.classify_infographic(text, posted, local_tz)
+        if info["category"] != "event":
+            self._set_category(item, info, "auto")
+            self._place_general(item, info, locked=False)
+            return
+        result = event_matcher.match_infographic(text, posted, web_events, settings, species_lookup, local_tz)
+        fallback = info.get("news_fallback")
+        if fallback and result["status"] == "pending":
+            self._set_category(item, fallback, "auto")
+            self._place_general(item, fallback, locked=False)
+            return
+        self._set_category(item, info, "auto")
+        self._apply_result(item, result)
 
     def _apply_result(self, item: dict[str, Any], result: dict[str, Any]) -> bool:
         matching = item.setdefault("matching", {})
@@ -138,32 +203,84 @@ class InfographicManager:
                     for item in payload["items"]:
                         if not self._should_rematch(item, event_ids):
                             continue
-                        posted = parse_timestamp((item.get("discord") or {}).get("posted_at")) or datetime.now(timezone.utc)
                         try:
-                            result = event_matcher.match_infographic(
-                                record_text(item), posted, web_events, settings, species_lookup, local_tz
-                            )
+                            self._evaluate(item, web_events, settings, species_lookup, local_tz)
                         except Exception:
                             LOGGER.exception("Matching für Infografik %s fehlgeschlagen", item.get("id"))
-                            continue
-                        self._apply_result(item, result)
                 items = payload["items"]
             else:
                 items = []
 
             by_event: dict[str, list[dict[str, Any]]] = {}
+            featured: list[dict[str, Any]] = []
             for item in items:
                 matching = item.get("matching") or {}
-                if matching.get("status") != "matched" or not matching.get("event_id"):
+                if matching.get("status") != "matched":
                     continue
                 path = store.resolve_file((item.get("attachment") or {}).get("local_path") or "")
                 if path is None or not path.exists():
                     continue
-                by_event.setdefault(str(matching["event_id"]), []).append(self.public_item(item, settings["attribution"]))
+                category = (item.get("category") or {}).get("value") or "event"
+                if category != "event":
+                    featured.append(self.public_item(item, settings["attribution"]))
+                elif matching.get("event_id"):
+                    by_event.setdefault(str(matching["event_id"]), []).append(self.public_item(item, settings["attribution"]))
             for values in by_event.values():
                 values.sort(key=lambda value: str(value.get("postedAt") or ""))
-            self._cache.update({"key": events_key, "mtime": store.mtime(), "by_event": by_event})
+            self._cache.update({"key": events_key, "mtime": store.mtime(), "by_event": by_event, "featured": featured})
             return by_event
+
+    def featured(self, config: dict[str, Any], now: datetime | None = None) -> dict[str, Any]:
+        """Weekly overview, current Rocket line-up and recent news for the website."""
+        settings = self.settings(config)
+        empty: dict[str, Any] = {"weekly": [], "rocket": None, "news": []}
+        if not settings["enabled"]:
+            return empty
+        options = settings["featured"]
+        local_tz = ZoneInfo(str(config.get("timezone") or "Europe/Berlin"))
+        now = now or datetime.now(timezone.utc)
+        today = now.astimezone(local_tz).date()
+        with self._lock:
+            items = list(self._cache.get("featured") or [])
+
+        def as_date(value: Any) -> date | None:
+            try:
+                return date.fromisoformat(str(value)) if value else None
+            except ValueError:
+                return None
+
+        weekly = [
+            item for item in items
+            if item["category"] == "weekly"
+            and (as_date(item["validUntil"]) or today) > today
+            and (as_date(item["validFrom"]) or today) <= today + timedelta(days=options["weekly_lead_days"])
+        ]
+        weekly.sort(key=lambda item: (str(item["validFrom"]), str(item["postedAt"])))
+        # Several posts for the same week: keep the newest one per week.
+        per_week: dict[str, dict[str, Any]] = {}
+        for item in weekly:
+            current = per_week.get(str(item["validFrom"]))
+            if current is None or str(item["postedAt"]) > str(current["postedAt"]):
+                per_week[str(item["validFrom"])] = item
+
+        rocket_cutoff = now - timedelta(days=options["rocket_max_age_days"])
+        rockets = [
+            item for item in items
+            if item["category"] == "rocket" and (parse_timestamp(item["postedAt"]) or now) >= rocket_cutoff
+        ]
+        rockets.sort(key=lambda item: (str(item["validFrom"]), str(item["postedAt"])), reverse=True)
+
+        news_cutoff = now - timedelta(days=options["news_days"])
+        news = [
+            item for item in items
+            if item["category"] == "news" and (parse_timestamp(item["postedAt"]) or now) >= news_cutoff
+        ]
+        news.sort(key=lambda item: str(item["postedAt"]), reverse=True)
+        return {
+            "weekly": [per_week[key] for key in sorted(per_week)][:2],
+            "rocket": rockets[0] if rockets else None,
+            "news": news[: options["news_max_items"]],
+        }
 
     @staticmethod
     def augment(web_events: list[dict[str, Any]], by_event: dict[str, list[dict[str, Any]]]) -> list[dict[str, Any]]:
@@ -237,6 +354,11 @@ class InfographicManager:
                 "method": matching.get("method"),
                 "locked": bool(matching.get("locked")),
                 "candidates": matching.get("candidates") or [],
+                "category": (item.get("category") or {}).get("value") or "event",
+                "categoryMethod": (item.get("category") or {}).get("method"),
+                "categoryLabel": (item.get("category") or {}).get("label"),
+                "validFrom": (item.get("category") or {}).get("valid_from"),
+                "validUntil": (item.get("category") or {}).get("valid_until"),
             })
         events = [
             {
@@ -295,6 +417,7 @@ class InfographicManager:
 
     def assign(self, config: dict[str, Any], record_id: str, event_id: str, event_title: str) -> dict[str, Any]:
         def change(item: dict[str, Any]) -> None:
+            self._set_category(item, {"category": "event", "reasons": ["manuell zugeordnet"]}, "manual")
             matching = item.setdefault("matching", {})
             matching.update({
                 "status": "matched",
@@ -333,8 +456,27 @@ class InfographicManager:
             })
         return self._update(config, record_id, change)
 
+    def set_category(self, config: dict[str, Any], record_id: str, category: str) -> dict[str, Any]:
+        if category not in CATEGORIES:
+            raise ValueError("Unbekannte Kategorie.")
+        local_tz = ZoneInfo(str(config.get("timezone") or "Europe/Berlin"))
+
+        def change(item: dict[str, Any]) -> None:
+            posted = parse_timestamp((item.get("discord") or {}).get("posted_at")) or datetime.now(timezone.utc)
+            info = event_matcher.category_info(category, record_text(item), posted, local_tz)
+            self._set_category(item, info, "manual")
+            matching = item.setdefault("matching", {})
+            if category == "event":
+                # Back to event matching; the next refresh scores it again.
+                matching.update({"status": "pending", "locked": False, "method": None, "needs_rematch": True,
+                                 "event_id": None, "event_title": None})
+            else:
+                self._place_general(item, info, locked=True)
+        return self._update(config, record_id, change)
+
     def rematch(self, config: dict[str, Any], record_id: str) -> dict[str, Any]:
         def change(item: dict[str, Any]) -> None:
+            item.pop("category", None)
             matching = item.setdefault("matching", {})
             matching.update({"status": "pending", "locked": False, "method": None, "needs_rematch": True})
         return self._update(config, record_id, change)

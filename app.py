@@ -1797,6 +1797,11 @@ class CalendarHandler(BaseHTTPRequestHandler):
 
         if path == "/api/events":
             api_payload = build_api_payload(config, stale, events_with_infographics(config, web_events, etag))
+            try:
+                api_payload["meta"]["featured"] = INFOGRAPHICS.featured(config)
+            except Exception:
+                LOGGER.exception("Allgemeine Infografiken konnten nicht ermittelt werden")
+                api_payload["meta"]["featured"] = {"weekly": [], "rocket": None, "news": []}
             api_body = json.dumps(api_payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
             api_etag = '"' + hashlib.sha256(api_body).hexdigest() + '"'
             if self.headers.get("If-None-Match") == api_etag:
@@ -1940,6 +1945,11 @@ class CalendarHandler(BaseHTTPRequestHandler):
                 else:
                     title = str(events[event_id].get("title") or event_id)
                 item = INFOGRAPHICS.assign(config, record_id, event_id, title)
+            elif action == "category":
+                category = sanitize_text(payload.get("category"), 20, "Kategorie", required=True)
+                item = INFOGRAPHICS.set_category(config, record_id, category)
+                INFOGRAPHICS.refresh(config, current_web_events(), None, pokemon_species_matches)
+                item = INFOGRAPHICS.store(config).get(record_id) or item
             elif action == "unassign":
                 item = INFOGRAPHICS.unassign(config, record_id)
             elif action == "reject":

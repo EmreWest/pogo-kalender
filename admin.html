@@ -531,6 +531,7 @@
     const statusLabels = {
       pending: "Offen", matched: "Zugeordnet", manual_review: "Zu prüfen", rejected: "Abgelehnt", error: "Fehler"
     };
+    const categoryLabels = { event: "Event", weekly: "Wochenübersicht", rocket: "Team GO Rocket", news: "Neuigkeit" };
     const workerLabels = {
       ok: "läuft", degraded: "teilweise gestört", error: "Fehler", disabled: "deaktiviert",
       unconfigured: "nicht konfiguriert", unknown: "noch nicht gestartet"
@@ -636,8 +637,35 @@
 
       const title = document.createElement("h3");
       title.className = "infographic-event";
-      title.textContent = item.eventId ? `→ ${item.eventTitle || item.eventId}` : "Noch keinem Event zugeordnet";
+      if (item.category && item.category !== "event") {
+        const range = item.validFrom ? ` (ab ${item.validFrom}${item.validUntil ? `, bis ${item.validUntil}` : ""})` : "";
+        title.textContent = `→ ${item.categoryLabel || categoryLabels[item.category]}${range}`;
+      } else {
+        title.textContent = item.eventId ? `→ ${item.eventTitle || item.eventId}` : "Noch keinem Event zugeordnet";
+      }
       body.appendChild(title);
+
+      const categoryRow = document.createElement("div");
+      categoryRow.className = "assign-row";
+      const categorySelect = document.createElement("select");
+      categorySelect.setAttribute("aria-label", "Art der Infografik");
+      Object.entries(categoryLabels).forEach(([value, label]) => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = `Art: ${label}`;
+        if ((item.category || "event") === value) option.selected = true;
+        categorySelect.appendChild(option);
+      });
+      categorySelect.addEventListener("change", () => infographicAction(item, "category", { category: categorySelect.value }));
+      categoryRow.appendChild(categorySelect);
+      if (item.categoryMethod) {
+        const methodPill = document.createElement("span");
+        methodPill.className = "pill";
+        methodPill.style.alignSelf = "center";
+        methodPill.textContent = item.categoryMethod === "manual" ? "Art manuell" : "Art automatisch";
+        categoryRow.appendChild(methodPill);
+      }
+      body.appendChild(categoryRow);
 
       const meta = document.createElement("div");
       meta.className = "event-meta";

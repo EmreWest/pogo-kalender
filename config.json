@@ -96,6 +96,12 @@
       "creator": "G47IX",
       "text": "Infografik von G47IX – mit freundlicher Genehmigung",
       "source_url": "https://linktr.ee/g47ix"
+    },
+    "featured": {
+      "weekly_lead_days": 3,
+      "rocket_max_age_days": 60,
+      "news_days": 14,
+      "news_max_items": 6
     }
   }
 }

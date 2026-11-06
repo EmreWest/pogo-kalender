@@ -176,3 +176,43 @@ class MatchingTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CategoryTest(unittest.TestCase):
+    """Texts are excerpts of real OCR output from Galix' graphics."""
+
+    def classify(self, text, posted):
+        return event_matcher.classify_infographic(text, posted, TZ)
+
+    def test_weekly_overview(self) -> None:
+        text = ("PRAY | ND | GOL, | 28. SEPTEMBER - 4. OKTOBER | MONTAG | DIENSTAG | MITTWOCH | DONNERSTAG | FREITAG | "
+                "SAMSTAG | SONNTAG | 28. SEP 29. SEP 30. SEP 1. OKT | Raid- Stunde | ÜBE NAHME")
+        result = self.classify(text, datetime(2026, 9, 27, 16, tzinfo=timezone.utc))
+        self.assertEqual(result["category"], "weekly")
+        self.assertEqual((result["valid_from"], result["valid_until"]), ("2026-09-28", "2026-10-05"))
+
+    def test_weekly_without_readable_dates_uses_posting_week(self) -> None:
+        text = "MONTAG DIENSTAG MITTWOCH DONNERSTAG FREITAG SAMSTAG SONNTAG"
+        result = self.classify(text, datetime(2026, 11, 7, 12, tzinfo=timezone.utc))  # Saturday
+        self.assertEqual((result["valid_from"], result["valid_until"]), ("2026-11-09", "2026-11-16"))
+
+    def test_rocket_takeover(self) -> None:
+        text = "910 wP | UB | NAHME | STARTET AM 2. OKT | 309 WP | 335 WP | ERNTE-FESTIVAL | ÜBE"
+        result = self.classify(text, datetime(2026, 9, 30, 16, tzinfo=timezone.utc))
+        self.assertEqual(result["category"], "rocket")
+        self.assertEqual(result["valid_from"], "2026-10-02")
+
+    def test_news_is_only_a_fallback(self) -> None:
+        go_pass = self.classify("Beginnt | GO-Pass: | November | NOV | DELUXE | Groudon | Boni für große Meilensteine",
+                                datetime(2026, 10, 30, 16, tzinfo=timezone.utc))
+        self.assertEqual(go_pass["category"], "event")
+        self.assertEqual(go_pass["news_fallback"]["category"], "news")
+        updates = self.classify("Spielqualität Updates | ENTDECKER-GADGET ENTWICKELT SICH!", POSTED)
+        self.assertEqual(updates["news_fallback"]["category"], "news")
+        raid = self.classify("4. NOV - 8. NOV GIRATINA Schwäche Trainer benötigt", POSTED)
+        self.assertIsNone(raid["news_fallback"])
+
+    def test_manual_category_info(self) -> None:
+        info = event_matcher.category_info("weekly", "irgendein Text", datetime(2026, 11, 4, 12, tzinfo=timezone.utc), TZ)
+        self.assertEqual((info["valid_from"], info["valid_until"]), ("2026-11-02", "2026-11-09"))
+        self.assertEqual(event_matcher.category_info("news", "", POSTED, TZ)["category"], "news")

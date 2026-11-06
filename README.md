@@ -278,6 +278,19 @@ Beispiele mit echten Galix-Grafiken:
 
 Automatische Zuordnungen bleiben stabil. Manuelle Entscheidungen werden nie automatisch überschrieben.
 
+## Wochenübersicht, Team GO Rocket und Neuigkeiten
+
+Nicht jede Grafik gehört zu einem einzelnen Event. Jede Grafik bekommt deshalb eine Art, die automatisch erkannt wird und im Admin änderbar ist.
+
+| Art | Erkennung | Anzeige | Gültig |
+| --- | --- | --- | --- |
+| Wochenübersicht („GO Weekly“) | mindestens fünf Wochentage (Montag … Sonntag) oder Stichwort „Weekly/Wochenübersicht“; Zeitraum wie „28. September – 4. Oktober“ | Leiste „Infografiken von G47IX“ über dem Kalender, mobil zusätzlich beim Antippen eines Tages dieser Woche in der Monatsansicht | im erkannten Wochenzeitraum, ab `weekly_lead_days` (3) Tage vorher als „Nächste Woche“ |
+| Team GO Rocket | Übernahme/Takeover, Rocket, Giovanni, Sierra, Cliff, Arlo, Rüpel, Anführer; Start wie „startet am 2. Okt“ | Leiste und eigene Kachel „Aktuelles Rocket-Lineup“ bei den hilfreichen Links | immer die neueste Grafik, höchstens `rocket_max_age_days` (60) Tage |
+| Neuigkeit | GO-Pass, Update, Spielqualität, Saison, Ankündigung – aber nur, wenn kein Event passt | Leiste | `news_days` (14) Tage ab Post, höchstens `news_max_items` (6) |
+| Event | alles andere | Detailansicht des zugeordneten Events | wie bisher |
+
+Die Wochenübersicht hat Vorrang vor Rocket, Rocket vor dem Event-Matching. Event-Grafiken, die nebenbei den GO-Pass erwähnen (zum Beispiel „GO-Pass Deluxe 5,49 €“), bleiben Event-Grafiken. Ein Klick auf eine Kachel öffnet die Grafik groß mit Quellenangabe. Die Werte stehen in der `config.json` unter `infographics.featured`.
+
 ## Manuelle Zuordnung im Adminbereich
 
 Unter `/admin` steht der Bereich „Infografiken (G47IX)“. Er verwendet dasselbe Login und dieselbe CSRF-Absicherung wie die manuellen Events.
@@ -291,6 +304,7 @@ Zu jeder Grafik werden angezeigt:
 - Nachrichtentext und OCR
 
 Möglich sind diese Aktionen:
+- Art ändern: Event, Wochenübersicht, Team GO Rocket oder Neuigkeit (wird als manuelle Entscheidung gespeichert)
 - Vorschlag zuordnen: ein Klick auf „Zuordnen: <Event> (<Punkte>)“
 - andere Zuordnung wählen: Auswahl aus allen Events im Kalender, auch manuellen
 - Zuordnung entfernen, Ablehnen
