@@ -985,6 +985,301 @@
       .resource-card { padding: 14px 15px; }
       .footer { flex-direction: column; text-align: center; }
     }
+
+    /* ---------- Mobile Ansicht (Agenda, kompakter Monat, Bottom-Sheet) ---------- */
+    .mobile-only { display: none; }
+    .subscribe-short { display: none; }
+
+    .m-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 6;
+      display: grid;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }
+    .m-segment {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px;
+      padding: 3px;
+      border-radius: 12px;
+      background: var(--surface-3);
+    }
+    .m-segment button {
+      min-height: 36px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: .9rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .m-segment button.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(15, 23, 42, .12); }
+    .m-chips {
+      display: flex;
+      gap: 7px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      margin: 0 -12px;
+      padding: 0 12px 2px;
+    }
+    .m-chips::-webkit-scrollbar { display: none; }
+    .m-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+      min-height: 32px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface-2);
+      color: var(--text);
+      font: inherit;
+      font-size: .8rem;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .m-chip .m-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--chip-color); }
+    .m-chip.active { background: var(--brand); border-color: var(--brand); color: white; }
+    .m-chip.active .m-dot { box-shadow: 0 0 0 2px rgba(255, 255, 255, .85); }
+
+    .m-view { padding: 4px 12px 18px; }
+    .m-section-title {
+      margin: 16px 2px 8px;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 850;
+      letter-spacing: .02em;
+    }
+    .m-section-title strong { color: var(--text); }
+    .m-running {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      scroll-snap-type: x proximity;
+      scrollbar-width: none;
+      margin: 0 -12px;
+      padding: 0 12px 4px;
+    }
+    .m-running::-webkit-scrollbar { display: none; }
+    .m-running-card {
+      position: relative;
+      flex: 0 0 min(72%, 250px);
+      scroll-snap-align: start;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 13px 12px 11px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface-2);
+      color: var(--text);
+      text-align: left;
+      font: inherit;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .m-running-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: var(--event-color);
+    }
+    .m-card {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) auto;
+      gap: 11px;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 7px;
+      padding: 10px 11px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--event-color);
+      border-radius: 12px;
+      background: var(--surface-2);
+      color: var(--text);
+      text-align: left;
+      font: inherit;
+      cursor: pointer;
+    }
+    .m-card.ended { opacity: .55; }
+    .m-avatar {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--event-color) 18%, var(--surface));
+      color: var(--text);
+      font-size: .78rem;
+      font-weight: 900;
+      overflow: hidden;
+    }
+    .m-running-card .m-avatar { width: 38px; height: 38px; }
+    .m-avatar .pokemon-thumb { width: 44px; height: 44px; box-shadow: none; }
+    .m-running-card .m-avatar .pokemon-thumb { width: 38px; height: 38px; }
+    .m-avatar .pokemon-more { display: none; }
+    .m-text { min-width: 0; display: grid; gap: 3px; }
+    .m-title {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      font-size: .93rem;
+      font-weight: 800;
+      line-height: 1.3;
+    }
+    .m-sub { color: var(--muted); font-size: .78rem; font-weight: 650; line-height: 1.35; }
+    .m-live {
+      display: inline-block;
+      margin-right: 5px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--success) 18%, var(--surface));
+      color: var(--success);
+      font-size: .68rem;
+      font-weight: 850;
+    }
+    .m-ig {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--brand) 14%, var(--surface));
+      color: var(--brand);
+    }
+    .m-ig svg { width: 15px; height: 15px; }
+    .m-more {
+      width: 100%;
+      min-height: 42px;
+      margin-top: 6px;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      background: transparent;
+      color: var(--brand);
+      font: inherit;
+      font-size: .85rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .m-empty { padding: 26px 10px; color: var(--muted); text-align: center; font-size: .88rem; }
+
+    .m-month-head { display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; margin: 8px 0 6px; }
+    .m-month-head h3 { margin: 0; text-align: center; font-size: 1.02rem; }
+    .m-icon-button {
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: var(--surface-2);
+      color: var(--text);
+      font: inherit;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+    .m-month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; touch-action: pan-y; }
+    .m-weekday { padding: 4px 0; color: var(--muted); font-size: .7rem; font-weight: 800; text-align: center; }
+    .m-day {
+      display: grid;
+      justify-items: center;
+      gap: 3px;
+      min-height: 48px;
+      padding: 6px 0 5px;
+      border: 1px solid transparent;
+      border-radius: 11px;
+      background: transparent;
+      color: var(--text);
+      font: inherit;
+      font-size: .9rem;
+      font-weight: 750;
+      cursor: pointer;
+    }
+    .m-day.today { border-color: var(--brand); }
+    .m-day.selected { background: var(--brand); color: white; }
+    .m-day.empty-day { color: var(--muted); font-weight: 600; }
+    .m-dots { display: flex; gap: 3px; height: 6px; }
+    .m-dots span { width: 6px; height: 6px; border-radius: 50%; background: var(--dot-color); }
+    .m-day.selected .m-dots span { box-shadow: 0 0 0 1px rgba(255, 255, 255, .9); }
+    .m-today-link {
+      display: block;
+      margin: 6px auto 0;
+      border: 0;
+      background: none;
+      color: var(--brand);
+      font: inherit;
+      font-size: .8rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .links-toggle {
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-2);
+      color: var(--text);
+      font: inherit;
+      font-size: .8rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .sheet-handle { width: 42px; height: 5px; margin: -6px auto 12px; border-radius: 999px; background: var(--line); }
+
+    @keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    @media (max-width: 820px) {
+      .mobile-only { display: block; }
+      .desktop-only, .toolbar, .legend, #month-view, #week-view, #list-view { display: none !important; }
+      .m-toolbar.mobile-only { display: grid; }
+      .page { width: min(100% - 16px, 1280px); padding-top: 8px; }
+      .hero { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 16px; margin-bottom: 10px; }
+      .eyebrow, .hero-copy, .data-badge { display: none; }
+      .brand-title { gap: 10px; }
+      .brand-logo { width: 34px; height: 34px; }
+      h1 { font-size: 1.08rem; line-height: 1.2; }
+      .subscribe { width: auto; min-height: 40px; padding: 0 13px; border-radius: 11px; font-size: .84rem; gap: 6px; }
+      .subscribe::before { font-size: 1rem; }
+      .subscribe-long { display: none; }
+      .subscribe-short { display: inline; }
+      .panel { overflow: visible; border-radius: 16px; }
+      .m-toolbar { border-radius: 16px 16px 0 0; }
+      .helpful-links-head { align-items: center; }
+      .helpful-links:not(.expanded) .resource-grid,
+      .helpful-links:not(.expanded) .helpful-links-intro { display: none; }
+      .helpful-links:not(.expanded) .helpful-links-head { margin-bottom: 0; }
+      .links-toggle.mobile-only { display: inline-flex; align-items: center; }
+
+      .modal { align-items: flex-end; padding: 0; }
+      .modal.open .dialog { animation: sheet-up .24s ease-out; }
+      .dialog {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-height: 92vh;
+        padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+        border-radius: 22px 22px 0 0;
+        border-bottom: 0;
+        overscroll-behavior: contain;
+      }
+      .dialog .sheet-handle { order: -1; display: block; }
+      .dialog-head { order: 0; }
+      .dialog .meta { order: 1; margin: 8px 0 4px; }
+      .modal-infographics { order: 2; margin-top: 10px; }
+      .modal-pokemon { order: 3; }
+      .description { order: 4; margin-top: 14px; }
+      .detail-link { order: 5; align-self: flex-start; }
+      .infographic-item img { max-height: 62vh; }
+    }
   </style>
 </head>
 <body>
@@ -999,7 +1294,7 @@
         <p class="hero-copy">Alle ausgewählten Events übersichtlich auf Deutsch. Mehrtägige Events laufen als durchgehende Balken über den Kalender. Tippe einen Termin für Details an oder abonniere ihn dauerhaft.</p>
         <div class="data-badge" id="data-badge"><span class="data-dot"></span><span id="data-status">Datenstand wird geladen …</span></div>
       </div>
-      <a class="subscribe" href="__WEBCAL_URL__">Kalender abonnieren</a>
+      <a class="subscribe" href="__WEBCAL_URL__"><span class="subscribe-long">Kalender abonnieren</span><span class="subscribe-short">Abonnieren</span></a>
     </section>
 
     <section class="panel">
@@ -1057,6 +1352,15 @@
       </div>
 
       <div id="list-view" class="view list-view"></div>
+
+      <div class="m-toolbar mobile-only">
+        <div class="m-segment" role="group" aria-label="Kalenderansicht">
+          <button type="button" id="m-agenda-button" class="active">Agenda</button>
+          <button type="button" id="m-month-button">Monat</button>
+        </div>
+        <div class="m-chips" id="m-chips" role="group" aria-label="Eventarten filtern"></div>
+      </div>
+      <div class="m-view mobile-only" id="m-view"></div>
     </section>
 
     <section class="helpful-links" aria-labelledby="helpful-links-title">
@@ -1065,6 +1369,7 @@
           <h2 id="helpful-links-title">Hilfreiche Pokémon-GO-Links</h2>
           <p class="helpful-links-intro">Datenbank, Angreifer-Ranglisten und aktuelle Konter gegen die Team-GO-Rocket-Bosse.</p>
         </div>
+        <button type="button" class="links-toggle mobile-only" id="links-toggle" aria-expanded="false">Anzeigen</button>
       </div>
 
       <div class="resource-grid">
@@ -1112,7 +1417,8 @@
   </main>
 
   <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <article class="dialog">
+    <article class="dialog" id="dialog">
+      <div class="sheet-handle mobile-only" aria-hidden="true"></div>
       <div class="dialog-head">
         <h3 id="modal-title"></h3>
         <button class="close" id="close" aria-label="Schließen">×</button>
@@ -1878,7 +2184,398 @@
       document.body.style.overflow = "";
     }
 
+
+    // ---------- Mobile Ansicht ----------
+    const mobileQuery = window.matchMedia("(max-width: 820px)");
+    const isMobile = () => mobileQuery.matches;
+    const mobile = { view: "agenda", filters: new Set(), selectedDay: null, showPast: false, horizonDays: 21 };
+    const typeGroups = [
+      { id: "raids", label: "Raids", color: "#6d28d9", types: ["raid-battles", "raid-hour", "raid-day", "raid-weekend", "elite-raids", "manual-raid"] },
+      { id: "dyna", label: "Dyna", color: "#db2777", types: ["max-battles", "max-mondays"] },
+      { id: "spotlight", label: "Rampenlicht", color: "#facc15", types: ["pokemon-spotlight-hour"] },
+      { id: "community", label: "Community Day", color: "#f97316", types: ["community-day"] },
+      { id: "research", label: "Forschung", color: "#10b981", types: ["research", "timed-research", "limited-research", "research-breakthrough", "special-research", "research-day"] },
+      { id: "rocket", label: "Rocket", color: "#7f1d1d", types: ["go-rocket-takeover", "team-go-rocket", "giovanni-special-research"] },
+      { id: "events", label: "Events", color: "#0ea5a8", types: [] }
+    ];
+    const formatWeekdayShort = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "numeric", month: "short" });
+    const formatDayDot = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+    const INFOGRAPHIC_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>';
+
+    function groupForType(type) {
+      const group = typeGroups.find(item => item.types.includes(type));
+      return group ? group.id : "events";
+    }
+
+    function mobileEvents() {
+      if (!mobile.filters.size) return state.events;
+      return state.events.filter(event => mobile.filters.has(groupForType(event.eventType)));
+    }
+
+    function saveMobileState() {
+      try {
+        localStorage.setItem("pogo-mobile-view", mobile.view);
+        localStorage.setItem("pogo-mobile-filters", JSON.stringify([...mobile.filters]));
+      } catch (_) {}
+    }
+
+    function renderChips() {
+      const container = document.getElementById("m-chips");
+      container.replaceChildren();
+      const present = new Set(state.events.map(event => groupForType(event.eventType)));
+      for (const id of [...mobile.filters]) if (!present.has(id)) mobile.filters.delete(id);
+      const makeChip = (label, active, color, onClick) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = `m-chip${active ? " active" : ""}`;
+        chip.setAttribute("aria-pressed", String(active));
+        if (color) {
+          const dot = document.createElement("span");
+          dot.className = "m-dot";
+          chip.style.setProperty("--chip-color", color);
+          chip.appendChild(dot);
+        }
+        chip.appendChild(document.createTextNode(label));
+        chip.addEventListener("click", onClick);
+        return chip;
+      };
+      container.appendChild(makeChip("Alle", !mobile.filters.size, null, () => {
+        mobile.filters.clear();
+        saveMobileState();
+        renderChips();
+        renderMobile();
+      }));
+      for (const group of typeGroups.filter(item => present.has(item.id))) {
+        container.appendChild(makeChip(group.label, mobile.filters.has(group.id), group.color, () => {
+          if (mobile.filters.has(group.id)) mobile.filters.delete(group.id); else mobile.filters.add(group.id);
+          saveMobileState();
+          renderChips();
+          renderMobile();
+        }));
+      }
+    }
+
+    function initials(text) {
+      const words = String(text || "").replace(/[^\p{L}\p{N}\s-]/gu, " ").split(/[\s-]+/).filter(Boolean);
+      return (words.slice(0, 2).map(word => word[0]).join("") || "•").toUpperCase();
+    }
+
+    function mobileAvatar(event) {
+      const avatar = document.createElement("span");
+      avatar.className = "m-avatar";
+      const thumbs = createPokemonThumbs(event, 1);
+      if (thumbs) {
+        avatar.appendChild(thumbs);
+        thumbs.querySelector("img")?.addEventListener("error", () => { avatar.textContent = initials(event.title); });
+      } else {
+        avatar.textContent = initials(event.title);
+      }
+      return avatar;
+    }
+
+    function relativeEnd(event, now) {
+      const end = effectiveEnd(event);
+      const days = dayDiff(startOfDay(now), startOfDay(end));
+      if (days <= 0) return isAllDayLike(event) && end.getHours() === 23 ? "endet heute" : `endet heute ${formatTime.format(eventEnd(event))}`;
+      if (days === 1) return `endet morgen ${isAllDayLike(event) && end.getHours() === 23 ? "" : formatTime.format(eventEnd(event))}`.trim();
+      return `noch ${days} Tage · bis ${formatDayDot.format(end)}`;
+    }
+
+    function mobileTimeText(event, day = null) {
+      const start = eventStart(event);
+      const end = eventEnd(event);
+      const inclusiveEnd = effectiveEnd(event);
+      if (sameDay(start, inclusiveEnd)) {
+        return isAllDayLike(event) ? "ganztägig" : `${formatTime.format(start)}–${formatTime.format(end)}`;
+      }
+      if (day) {
+        const total = dayDiff(startOfDay(start), startOfDay(inclusiveEnd)) + 1;
+        const index = dayDiff(startOfDay(start), startOfDay(day)) + 1;
+        return `Tag ${index} von ${total} · bis ${formatDayDot.format(inclusiveEnd)}`;
+      }
+      const startText = isAllDayLike(event) && start.getHours() === 0 ? "" : `ab ${formatTime.format(start)} · `;
+      return `${startText}bis ${formatDayDot.format(inclusiveEnd)}`;
+    }
+
+    function mobileCard(event, now, day = null) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "m-card";
+      applyEventColors(button, event.eventType);
+      if (eventEnd(event) <= now) button.classList.add("ended");
+      const text = document.createElement("span");
+      text.className = "m-text";
+      const title = document.createElement("span");
+      title.className = "m-title";
+      title.textContent = event.title;
+      const sub = document.createElement("span");
+      sub.className = "m-sub";
+      if (eventStart(event) <= now && eventEnd(event) > now && !day) {
+        const live = document.createElement("span");
+        live.className = "m-live";
+        live.textContent = "läuft";
+        sub.appendChild(live);
+      }
+      sub.appendChild(document.createTextNode(`${mobileTimeText(event, day)} · ${event.category || "Event"}`));
+      text.append(title, sub);
+      button.append(mobileAvatar(event), text);
+      if (Array.isArray(event.infographics) && event.infographics.length) {
+        const badge = document.createElement("span");
+        badge.className = "m-ig";
+        badge.title = "Mit Infografik";
+        badge.innerHTML = INFOGRAPHIC_ICON;
+        button.appendChild(badge);
+      } else {
+        button.appendChild(document.createElement("span"));
+      }
+      button.addEventListener("click", () => openEvent(event));
+      return button;
+    }
+
+    function sectionTitle(text, strong = "") {
+      const title = document.createElement("h3");
+      title.className = "m-section-title";
+      if (strong) {
+        const bold = document.createElement("strong");
+        bold.textContent = strong;
+        title.append(bold, document.createTextNode(text ? ` · ${text}` : ""));
+      } else {
+        title.textContent = text;
+      }
+      return title;
+    }
+
+    function moreButton(label, onClick) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "m-more";
+      button.textContent = label;
+      button.addEventListener("click", onClick);
+      return button;
+    }
+
+    function renderAgenda(container) {
+      const now = new Date();
+      const today = startOfDay(now);
+      const events = mobileEvents().slice().sort((a, b) => eventStart(a) - eventStart(b));
+      const running = events.filter(event => eventStart(event) < today && eventEnd(event) > now)
+        .sort((a, b) => eventEnd(a) - eventEnd(b));
+      const past = events.filter(event => eventStart(event) < today && eventEnd(event) <= now);
+      const upcoming = events.filter(event => eventStart(event) >= today);
+      const horizon = addDays(today, mobile.horizonDays);
+      const visible = upcoming.filter(event => eventStart(event) < horizon);
+
+      if (past.length) {
+        if (mobile.showPast) {
+          container.appendChild(sectionTitle("Bereits vorbei"));
+          past.forEach(event => container.appendChild(mobileCard(event, now)));
+        } else {
+          container.appendChild(moreButton(`Frühere anzeigen (${past.length})`, () => { mobile.showPast = true; renderMobile(); }));
+        }
+      }
+
+      if (running.length) {
+        container.appendChild(sectionTitle("Läuft gerade"));
+        const strip = document.createElement("div");
+        strip.className = "m-running";
+        for (const event of running) {
+          const card = document.createElement("button");
+          card.type = "button";
+          card.className = "m-running-card";
+          applyEventColors(card, event.eventType);
+          const text = document.createElement("span");
+          text.className = "m-text";
+          const title = document.createElement("span");
+          title.className = "m-title";
+          title.textContent = event.title;
+          const sub = document.createElement("span");
+          sub.className = "m-sub";
+          sub.textContent = relativeEnd(event, now);
+          text.append(title, sub);
+          card.append(mobileAvatar(event), text);
+          card.addEventListener("click", () => openEvent(event));
+          strip.appendChild(card);
+        }
+        container.appendChild(strip);
+      }
+
+      const groups = new Map();
+      for (const event of visible) {
+        const key = dateKey(eventStart(event));
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(event);
+      }
+      for (const [key, dayEvents] of groups) {
+        const day = new Date(`${key}T12:00:00`);
+        const offset = dayDiff(today, day);
+        const label = offset === 0 ? "Heute" : (offset === 1 ? "Morgen" : "");
+        container.appendChild(label ? sectionTitle(formatWeekdayShort.format(day), label) : sectionTitle(formatDay.format(day)));
+        dayEvents.forEach(event => container.appendChild(mobileCard(event, now)));
+      }
+
+      const remaining = upcoming.length - visible.length;
+      if (remaining > 0) {
+        container.appendChild(moreButton(`Weitere Events anzeigen (${remaining})`, () => { mobile.horizonDays += 30; renderMobile(); }));
+      }
+      if (!running.length && !visible.length && !past.length) {
+        const empty = document.createElement("div");
+        empty.className = "m-empty";
+        empty.textContent = mobile.filters.size ? "Für diese Auswahl gibt es keine kommenden Events." : "Keine kommenden Events eingetragen.";
+        container.appendChild(empty);
+      }
+    }
+
+    function eventsOnDay(events, day) {
+      const dayStart = startOfDay(day);
+      return events.filter(event => overlaps(event, dayStart, addDays(dayStart, 1)));
+    }
+
+    function renderMobileMonth(container) {
+      const now = new Date();
+      const events = mobileEvents();
+      const monthStart = new Date(state.cursor.getFullYear(), state.cursor.getMonth(), 1);
+      const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
+      if (!mobile.selectedDay || mobile.selectedDay.getMonth() !== monthStart.getMonth() || mobile.selectedDay.getFullYear() !== monthStart.getFullYear()) {
+        mobile.selectedDay = (now.getMonth() === monthStart.getMonth() && now.getFullYear() === monthStart.getFullYear()) ? startOfDay(now) : monthStart;
+      }
+
+      const head = document.createElement("div");
+      head.className = "m-month-head";
+      const prev = document.createElement("button");
+      prev.className = "m-icon-button";
+      prev.type = "button";
+      prev.setAttribute("aria-label", "Vorheriger Monat");
+      prev.textContent = "‹";
+      prev.addEventListener("click", () => movePeriod(-1));
+      const title = document.createElement("h3");
+      title.textContent = formatMonth.format(monthStart);
+      const next = document.createElement("button");
+      next.className = "m-icon-button";
+      next.type = "button";
+      next.setAttribute("aria-label", "Nächster Monat");
+      next.textContent = "›";
+      next.addEventListener("click", () => movePeriod(1));
+      head.append(prev, title, next);
+      container.appendChild(head);
+
+      const grid = document.createElement("div");
+      grid.className = "m-month-grid";
+      ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"].forEach(label => {
+        const cell = document.createElement("div");
+        cell.className = "m-weekday";
+        cell.textContent = label;
+        grid.appendChild(cell);
+      });
+      const leading = (monthStart.getDay() + 6) % 7;
+      for (let i = 0; i < leading; i += 1) grid.appendChild(document.createElement("div"));
+      for (let dayNumber = 1; dayNumber <= daysInMonth; dayNumber += 1) {
+        const day = new Date(monthStart.getFullYear(), monthStart.getMonth(), dayNumber);
+        const dayEvents = eventsOnDay(events, day);
+        const cell = document.createElement("button");
+        cell.type = "button";
+        cell.className = "m-day";
+        if (sameDay(day, now)) cell.classList.add("today");
+        if (sameDay(day, mobile.selectedDay)) cell.classList.add("selected");
+        if (!dayEvents.length) cell.classList.add("empty-day");
+        cell.setAttribute("aria-label", `${formatDay.format(day)}, ${dayEvents.length} Events`);
+        const number = document.createElement("span");
+        number.textContent = dayNumber;
+        const dots = document.createElement("span");
+        dots.className = "m-dots";
+        const colors = [...new Set(dayEvents.map(event => colorForType(event.eventType)))].slice(0, 4);
+        colors.forEach(color => {
+          const dot = document.createElement("span");
+          dot.style.setProperty("--dot-color", color);
+          dots.appendChild(dot);
+        });
+        cell.append(number, dots);
+        cell.addEventListener("click", () => { mobile.selectedDay = day; renderMobile(); });
+        grid.appendChild(cell);
+      }
+      let touchX = null;
+      grid.addEventListener("touchstart", event => { touchX = event.touches[0].clientX; }, { passive: true });
+      grid.addEventListener("touchend", event => {
+        if (touchX === null) return;
+        const delta = event.changedTouches[0].clientX - touchX;
+        touchX = null;
+        if (Math.abs(delta) > 60) movePeriod(delta < 0 ? 1 : -1);
+      });
+      container.appendChild(grid);
+
+      const isCurrentMonth = now.getMonth() === monthStart.getMonth() && now.getFullYear() === monthStart.getFullYear();
+      if (!isCurrentMonth) {
+        const todayLink = document.createElement("button");
+        todayLink.type = "button";
+        todayLink.className = "m-today-link";
+        todayLink.textContent = "Zu heute springen";
+        todayLink.addEventListener("click", () => { state.cursor = new Date(); mobile.selectedDay = null; renderMobile(); });
+        container.appendChild(todayLink);
+      }
+
+      const selected = mobile.selectedDay;
+      const offset = dayDiff(startOfDay(now), selected);
+      container.appendChild(offset === 0 ? sectionTitle(formatWeekdayShort.format(selected), "Heute") : sectionTitle(formatDay.format(selected)));
+      const dayEvents = eventsOnDay(events, selected).sort((a, b) =>
+        Number(isAllDayLike(b)) - Number(isAllDayLike(a)) || eventStart(a) - eventStart(b));
+      if (!dayEvents.length) {
+        const empty = document.createElement("div");
+        empty.className = "m-empty";
+        empty.textContent = "An diesem Tag ist nichts eingetragen.";
+        container.appendChild(empty);
+      }
+      dayEvents.forEach(event => container.appendChild(mobileCard(event, now, selected)));
+    }
+
+    function renderMobile() {
+      const container = document.getElementById("m-view");
+      container.replaceChildren();
+      document.getElementById("m-agenda-button").classList.toggle("active", mobile.view === "agenda");
+      document.getElementById("m-month-button").classList.toggle("active", mobile.view === "month");
+      if (mobile.view === "month") renderMobileMonth(container); else renderAgenda(container);
+    }
+
+    function setMobileView(view) {
+      mobile.view = view;
+      if (view === "month") state.cursor = new Date();
+      saveMobileState();
+      renderMobile();
+      document.querySelector(".panel").scrollIntoView({ block: "start", behavior: "smooth" });
+    }
+
+    // Bottom-Sheet: nach unten wischen schließt die Detailansicht
+    (function enableSheetSwipe() {
+      const dialog = document.getElementById("dialog");
+      let startY = null;
+      let deltaY = 0;
+      dialog.addEventListener("touchstart", event => {
+        if (!isMobile() || dialog.scrollTop > 0) { startY = null; return; }
+        startY = event.touches[0].clientY;
+        deltaY = 0;
+      }, { passive: true });
+      dialog.addEventListener("touchmove", event => {
+        if (startY === null) return;
+        deltaY = event.touches[0].clientY - startY;
+        if (deltaY > 0) dialog.style.transform = `translateY(${deltaY}px)`;
+      }, { passive: true });
+      dialog.addEventListener("touchend", () => {
+        if (startY === null) return;
+        dialog.style.transition = "transform .18s ease-out";
+        if (deltaY > 110) {
+          dialog.style.transform = "translateY(100%)";
+          setTimeout(() => { closeModal(); dialog.style.transform = ""; dialog.style.transition = ""; }, 170);
+        } else {
+          dialog.style.transform = "";
+          setTimeout(() => { dialog.style.transition = ""; }, 200);
+        }
+        startY = null;
+      });
+    })();
+
     function renderCurrentView() {
+      if (isMobile()) {
+        renderMobile();
+        return;
+      }
       updateTitle();
       document.querySelectorAll(".view").forEach(element => element.classList.remove("active"));
       document.getElementById(`${state.view}-view`).classList.add("active");
@@ -1897,7 +2594,7 @@
     }
 
     function movePeriod(direction) {
-      if (state.view === "week") {
+      if (state.view === "week" && !isMobile()) {
         state.cursor = addDays(state.cursor, direction * 7);
       } else {
         state.cursor = new Date(state.cursor.getFullYear(), state.cursor.getMonth() + direction, 1);
@@ -1914,6 +2611,15 @@
     document.getElementById("month-button").addEventListener("click", () => setView("month"));
     document.getElementById("week-button").addEventListener("click", () => setView("week"));
     document.getElementById("list-button").addEventListener("click", () => setView("list"));
+    document.getElementById("m-agenda-button").addEventListener("click", () => setMobileView("agenda"));
+    document.getElementById("m-month-button").addEventListener("click", () => setMobileView("month"));
+    document.getElementById("links-toggle").addEventListener("click", event => {
+      const section = document.querySelector(".helpful-links");
+      const expanded = section.classList.toggle("expanded");
+      event.currentTarget.textContent = expanded ? "Ausblenden" : "Anzeigen";
+      event.currentTarget.setAttribute("aria-expanded", String(expanded));
+    });
+    mobileQuery.addEventListener("change", () => { if (state.events.length) { renderChips(); renderCurrentView(); } });
     document.getElementById("close").addEventListener("click", closeModal);
     document.getElementById("modal").addEventListener("click", event => {
       if (event.target.id === "modal") closeModal();
@@ -1931,6 +2637,10 @@
     try {
       const savedView = localStorage.getItem("pogo-calendar-view");
       if (["month", "week", "list"].includes(savedView)) state.view = savedView;
+      const savedMobileView = localStorage.getItem("pogo-mobile-view");
+      if (["agenda", "month"].includes(savedMobileView)) mobile.view = savedMobileView;
+      const savedFilters = JSON.parse(localStorage.getItem("pogo-mobile-filters") || "[]");
+      if (Array.isArray(savedFilters)) savedFilters.forEach(id => typeGroups.some(group => group.id === id) && mobile.filters.add(id));
     } catch (_) {}
 
     fetch("/api/events", { cache: "no-store" })
@@ -1943,6 +2653,7 @@
         state.meta = Array.isArray(payload) ? {} : (payload.meta || {});
         document.getElementById("loading").style.display = "none";
         renderLegend();
+        renderChips();
         renderDataStatus();
         renderCurrentView();
       })
