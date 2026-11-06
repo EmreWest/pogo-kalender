@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <title>Status · __CALENDAR_NAME__</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f3f6fb;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --text: #142033;
+      --muted: #667085;
+      --line: #dce3ec;
+      --brand: #2563eb;
+      --success: #15803d;
+      --warning: #b45309;
+      --danger: #dc2626;
+      --shadow: 0 18px 60px rgba(15, 23, 42, 0.10);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #090e18;
+        --surface: #111827;
+        --surface-2: #182132;
+        --text: #f4f7fb;
+        --muted: #a8b3c5;
+        --line: #2b384c;
+        --brand: #4d8dff;
+        --success: #4ade80;
+        --warning: #fbbf24;
+        --danger: #f87171;
+        --shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 48px;
+      height: 48px;
+      flex: 0 0 auto;
+      filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.22));
+    }
+
+    .page {
+      width: min(980px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 28px 0 54px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 30px;
+      border-radius: 22px;
+      background: linear-gradient(135deg, #111827, #1e3a8a);
+      color: white;
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      right: -100px;
+      top: -160px;
+      border-radius: 50%;
+      background: rgba(96, 165, 250, 0.28);
+    }
+
+    .topline {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      align-items: flex-start;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      font-size: 0.78rem;
+      font-weight: 850;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.72;
+    }
+
+    h1 { margin: 0; font-size: clamp(1.8rem, 5vw, 2.8rem); }
+    .hero p { margin: 12px 0 0; color: rgba(255,255,255,0.78); }
+
+    .back {
+      position: relative;
+      z-index: 1;
+      display: inline-flex;
+      padding: 10px 14px;
+      border-radius: 11px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.18);
+      color: white;
+      text-decoration: none;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .status-line {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 24px;
+      font-size: 0.95rem;
+      font-weight: 850;
+    }
+
+    .status-dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 0 6px rgba(74, 222, 128, 0.14);
+    }
+
+    .status-line.warning .status-dot {
+      background: #fbbf24;
+      box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.14);
+    }
+
+    .status-line.danger .status-dot {
+      background: #f87171;
+      box-shadow: 0 0 0 6px rgba(248, 113, 113, 0.14);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .card {
+      padding: 20px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .card-label {
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 850;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .card-value {
+      margin-top: 10px;
+      font-size: clamp(1.35rem, 4vw, 2rem);
+      font-weight: 900;
+      line-height: 1.12;
+      overflow-wrap: anywhere;
+    }
+
+    .card-note {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+
+    .wide { grid-column: 1 / -1; }
+
+    .details {
+      display: grid;
+      grid-template-columns: 180px minmax(0, 1fr);
+      gap: 0;
+      margin: 0;
+    }
+
+    .details dt,
+    .details dd {
+      margin: 0;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .details dt { color: var(--muted); font-weight: 750; }
+    .details dd { font-weight: 700; overflow-wrap: anywhere; }
+    .details dt:last-of-type,
+    .details dd:last-of-type { border-bottom: 0; }
+
+    .error-box {
+      display: none;
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--danger) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+      color: var(--danger);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 15px;
+      border-radius: 11px;
+      background: var(--brand);
+      color: white;
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    .button.secondary {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .refresh-note {
+      margin-top: 18px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    @media (max-width: 760px) {
+      .page { width: min(100% - 18px, 980px); padding-top: 9px; }
+      .hero { padding: 24px 20px; border-radius: 18px; }
+      .topline { flex-direction: column; }
+      .grid { grid-template-columns: 1fr; }
+      .wide { grid-column: auto; }
+      .details { grid-template-columns: 1fr; }
+      .details dt { border-bottom: 0; padding-bottom: 3px; }
+      .details dd { padding-top: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="topline">
+        <div>
+          <p class="eyebrow">Systemstatus</p>
+          <div class="brand-title">
+            <img class="brand-logo" src="/favicon.svg" alt="" width="48" height="48">
+            <h1>Pokémon-GO-Kalender</h1>
+          </div>
+          <p>Live-Status des Datenabrufs, der Übersetzung und des iCalendar-Feeds.</p>
+        </div>
+        <a class="back" href="/">← Zum Kalender</a>
+      </div>
+      <div class="status-line" id="status-line"><span class="status-dot"></span><span id="status-text">Status wird geladen …</span></div>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <div class="card-label">Datenstand</div>
+        <div class="card-value" id="updated-at">–</div>
+        <div class="card-note" id="cache-note">Letzter erfolgreicher Abruf</div>
+      </article>
+      <article class="card">
+        <div class="card-label">Kalender-Events</div>
+        <div class="card-value" id="calendar-events">–</div>
+        <div class="card-note">Nach deinen Filtern</div>
+      </article>
+      <article class="card">
+        <div class="card-label">Quell-Events</div>
+        <div class="card-value" id="source-events">–</div>
+        <div class="card-note">Von ScrapedDuck geladen</div>
+      </article>
+      <article class="card">
+        <div class="card-label">Manuelle Events</div>
+        <div class="card-value" id="manual-events">–</div>
+        <div class="card-note" id="manual-updated">Über die Adminseite gepflegt</div>
+      </article>
+      <article class="card">
+        <div class="card-label">Pokémon-Namen</div>
+        <div class="card-value" id="mapping-count">–</div>
+        <div class="card-note" id="mapping-source">Deutsche Übersetzungen</div>
+      </article>
+      <article class="card">
+        <div class="card-label">Pokémon-Bilder</div>
+        <div class="card-value" id="image-cache-count">–</div>
+        <div class="card-note" id="image-source-count">Lokal zwischengespeichert</div>
+      </article>
+      <article class="card">
+        <div class="card-label">Datenalter</div>
+        <div class="card-value" id="cache-age">–</div>
+        <div class="card-note" id="cache-ttl">Seit dem letzten erfolgreichen Abruf</div>
+      </article>
+      <article class="card">
+        <div class="card-label">Zeitzone</div>
+        <div class="card-value" id="timezone">–</div>
+        <div class="card-note">Für Webansicht und iCal</div>
+      </article>
+
+      <article class="card wide">
+        <div class="card-label">Technische Details</div>
+        <dl class="details">
+          <dt>Kalenderpfad</dt><dd><a id="calendar-path" href="__CALENDAR_PATH__">__CALENDAR_PATH__</a></dd>
+          <dt>Quelldaten</dt><dd id="source-url">–</dd>
+          <dt>Letzter Versuch</dt><dd id="last-attempt">–</dd>
+          <dt>Version</dt><dd id="service-version">–</dd>
+        </dl>
+        <div class="error-box" id="error-box"></div>
+        <div class="actions">
+          <a class="button" href="__WEBCAL_URL__">Kalender abonnieren</a>
+          <a class="button secondary" href="/health">JSON-Status</a>
+          <a class="button secondary" href="__CALENDAR_PATH__">iCal-Feed öffnen</a>
+          <a class="button secondary" href="/admin">Events verwalten</a>
+        </div>
+      </article>
+    </section>
+
+    <div class="refresh-note">Die Anzeige aktualisiert sich automatisch alle 30 Sekunden.</div>
+  </main>
+
+  <script>
+    const formatDateTime = new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit"
+    });
+
+    function formatDuration(seconds) {
+      if (seconds === null || seconds === undefined) return "–";
+      if (seconds < 60) return `${Math.max(0, Math.round(seconds))} s`;
+      if (seconds < 3600) return `${Math.round(seconds / 60)} min`;
+      return `${(seconds / 3600).toFixed(1).replace(".0", "")} h`;
+    }
+
+    function setText(id, value) {
+      document.getElementById(id).textContent = value ?? "–";
+    }
+
+    function render(data) {
+      const line = document.getElementById("status-line");
+      line.classList.remove("warning", "danger");
+      if (data.status === "ok") {
+        setText("status-text", "Alle Systeme funktionieren ordnungsgemäß");
+      } else if (data.status === "starting") {
+        line.classList.add("warning");
+        setText("status-text", "Der erste Datenabruf steht noch aus");
+      } else {
+        line.classList.add(data.stale ? "warning" : "danger");
+        setText("status-text", data.stale ? "Es werden zwischengespeicherte Daten verwendet" : "Beim Datenabruf ist ein Fehler aufgetreten");
+      }
+
+      const updated = data.last_success_at ? new Date(data.last_success_at) : null;
+      setText("updated-at", updated && !Number.isNaN(updated.getTime()) ? formatDateTime.format(updated) : "Noch kein Abruf");
+      setText("calendar-events", data.calendar_events);
+      setText("source-events", data.source_events);
+      setText("manual-events", data.manual_events ?? 0);
+      setText("manual-updated", data.manual_events_updated_at
+        ? `Zuletzt geändert: ${formatDateTime.format(new Date(data.manual_events_updated_at))}`
+        : "Noch keine manuellen Events gespeichert");
+      setText("mapping-count", data.pokemon_name_mappings);
+      setText("mapping-source", `Quelle: ${data.pokemon_mapping_source || "unbekannt"}`);
+      setText("image-cache-count", data.pokemon_image_cache_files ?? 0);
+      setText("image-source-count", `${data.pokemon_image_sources ?? 0} Bilder in aktuellen Events erkannt`);
+      setText("cache-age", formatDuration(data.cache_age_seconds));
+      setText("cache-ttl", `Abrufintervall: ${formatDuration(data.cache_ttl_seconds)}`);
+      setText("timezone", data.timezone);
+      setText("source-url", data.source_url);
+      setText("last-attempt", data.last_attempt_at ? formatDateTime.format(new Date(data.last_attempt_at)) : "Noch kein Versuch");
+      setText("service-version", data.service_version);
+      document.getElementById("calendar-path").textContent = data.calendar_path || "__CALENDAR_PATH__";
+      document.getElementById("calendar-path").href = data.calendar_path || "__CALENDAR_PATH__";
+
+      const errorBox = document.getElementById("error-box");
+      errorBox.style.display = data.last_error ? "block" : "none";
+      errorBox.textContent = data.last_error ? `Letzter Fehler: ${data.last_error}` : "";
+    }
+
+    function loadStatus() {
+      fetch("/health", { cache: "no-store" })
+        .then(response => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json();
+        })
+        .then(render)
+        .catch(error => {
+          const line = document.getElementById("status-line");
+          line.classList.add("danger");
+          setText("status-text", `Status konnte nicht geladen werden: ${error.message}`);
+        });
+    }
+
+    loadStatus();
+    setInterval(loadStatus, 30000);
+  </script>
+</body>
+</html>

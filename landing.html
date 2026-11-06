@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <title>__CALENDAR_NAME__</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f3f6fb;
+      --surface: #ffffff;
+      --surface-2: #f8fafc;
+      --surface-3: #eef3f9;
+      --text: #142033;
+      --muted: #667085;
+      --line: #dce3ec;
+      --brand: #2563eb;
+      --brand-2: #1d4ed8;
+      --today: #eff6ff;
+      --danger: #dc2626;
+      --success: #15803d;
+      --shadow: 0 18px 60px rgba(15, 23, 42, 0.10);
+      --radius: 22px;
+      --day-label-width: 88px;
+      --week-hour-height: 72px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #090e18;
+        --surface: #111827;
+        --surface-2: #182132;
+        --surface-3: #202c40;
+        --text: #f4f7fb;
+        --muted: #a8b3c5;
+        --line: #2b384c;
+        --brand: #4d8dff;
+        --brand-2: #77a7ff;
+        --today: #162b4f;
+        --danger: #f87171;
+        --success: #4ade80;
+        --shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, a { -webkit-tap-highlight-color: transparent; }
+
+    .page {
+      width: min(1280px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 28px 0 54px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 28px;
+      padding: 30px;
+      border-radius: var(--radius);
+      background:
+        radial-gradient(circle at 85% 10%, rgba(96, 165, 250, 0.40), transparent 28%),
+        linear-gradient(135deg, #111827, #1e3a8a);
+      color: white;
+      box-shadow: var(--shadow);
+      margin-bottom: 22px;
+    }
+
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 52px;
+      height: 52px;
+      flex: 0 0 auto;
+      filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.22));
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      font-size: 0.78rem;
+      font-weight: 850;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      opacity: 0.72;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.8rem, 4vw, 3.1rem);
+      line-height: 1.05;
+    }
+
+    .hero-copy {
+      max-width: 720px;
+      margin: 13px 0 0;
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.80);
+    }
+
+    .data-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 18px;
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.20);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.10);
+      color: rgba(255, 255, 255, 0.90);
+      font-size: 0.82rem;
+      font-weight: 750;
+      backdrop-filter: blur(8px);
+    }
+
+    .data-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #4ade80;
+      box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.16);
+    }
+
+    .data-badge.stale .data-dot {
+      background: #fbbf24;
+      box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.16);
+    }
+
+    .subscribe {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      min-height: 64px;
+      padding: 0 30px;
+      border-radius: 16px;
+      background: white;
+      color: #172554;
+      font-size: 1.05rem;
+      font-weight: 900;
+      text-decoration: none;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+      white-space: nowrap;
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+    }
+
+    .subscribe::before { content: "＋"; font-size: 1.35rem; line-height: 1; }
+    .subscribe:hover { transform: translateY(-2px); box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28); }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: auto minmax(160px, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar h2 {
+      margin: 0;
+      text-align: center;
+      font-size: clamp(1.08rem, 3vw, 1.55rem);
+      text-transform: capitalize;
+    }
+
+    .control {
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: var(--surface-2);
+      color: var(--text);
+      padding: 0 13px;
+      font: inherit;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    .control:hover { background: var(--surface-3); }
+
+    .control.active {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: white;
+    }
+
+    .legend {
+      display: flex;
+      gap: 8px 14px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-2);
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 750;
+    }
+
+    .legend-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 4px;
+      background: var(--legend-color);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.30);
+    }
+
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .month-scroll,
+    .week-scroll { overflow-x: auto; }
+
+    .month-canvas { min-width: 900px; }
+
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-2);
+    }
+
+    .weekdays div {
+      padding: 11px 8px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 850;
+      border-right: 1px solid var(--line);
+    }
+
+    .weekdays div:last-child { border-right: 0; }
+
+    .month-week {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      border-bottom: 1px solid var(--line);
+      isolation: isolate;
+    }
+
+    .month-week:last-child { border-bottom: 0; }
+
+    .month-day {
+      position: relative;
+      z-index: 0;
+      min-width: 0;
+      border-right: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .month-day:last-of-type { border-right: 0; }
+    .month-day.outside { background: var(--surface-2); }
+    .month-day.today { background: var(--today); }
+
+    .day-number {
+      position: absolute;
+      top: 7px;
+      right: 8px;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 29px;
+      height: 29px;
+      border-radius: 50%;
+      color: var(--text);
+      font-weight: 850;
+      font-size: 0.86rem;
+    }
+
+    .outside .day-number { color: var(--muted); opacity: 0.7; }
+    .today .day-number { background: var(--brand); color: white; }
+
+    .month-event,
+    .all-day-event,
+    .timed-event {
+      position: absolute;
+      z-index: 4;
+      border: 0;
+      background: var(--event-color);
+      color: var(--event-text, white);
+      font: inherit;
+      font-weight: 800;
+      text-align: left;
+      cursor: pointer;
+      box-shadow: 0 2px 7px rgba(15, 23, 42, 0.20);
+      overflow: hidden;
+    }
+
+    .event-content {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 0;
+      height: 100%;
+    }
+
+    .event-text {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pokemon-thumbs {
+      display: inline-flex;
+      align-items: center;
+      flex: 0 0 auto;
+    }
+
+    .pokemon-thumb {
+      display: block;
+      object-fit: contain;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.82);
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.28);
+    }
+
+    .pokemon-thumb + .pokemon-thumb { margin-left: -9px; }
+
+    .pokemon-more {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 22px;
+      margin-left: -5px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: rgba(17, 24, 39, 0.82);
+      color: white;
+      font-size: 0.58rem;
+      font-weight: 900;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.28);
+    }
+
+    .month-event {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      height: 25px;
+      padding: 2px 8px;
+      border-radius: 7px;
+      font-size: 0.72rem;
+      line-height: 1.1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .month-event .event-content,
+    .all-day-event .event-content {
+      flex: 1 1 auto;
+      width: auto;
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .month-event .pokemon-thumb,
+    .all-day-event .pokemon-thumb { width: 21px; height: 21px; }
+
+    .month-event.continues-before,
+    .all-day-event.continues-before { border-top-left-radius: 2px; border-bottom-left-radius: 2px; }
+    .month-event.continues-after,
+    .all-day-event.continues-after { border-top-right-radius: 2px; border-bottom-right-radius: 2px; }
+
+    .month-event.continues-before::before,
+    .all-day-event.continues-before::before,
+    .month-event.continues-after::after,
+    .all-day-event.continues-after::after {
+      display: block;
+      flex: 0 0 auto;
+      align-self: center;
+      line-height: 1;
+      opacity: 0.78;
+    }
+
+    .month-event.continues-before::before,
+    .all-day-event.continues-before::before { content: "‹"; }
+    .month-event.continues-after::after,
+    .all-day-event.continues-after::after { content: "›"; }
+
+    .week-hint {
+      display: none;
+      padding: 9px 14px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 750;
+      text-align: center;
+    }
+
+    .week-canvas {
+      min-width: 980px;
+      background: var(--surface);
+    }
+
+    .all-day-section {
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-2);
+    }
+
+    .all-day-header,
+    .time-header {
+      display: grid;
+      grid-template-columns: var(--day-label-width) minmax(0, 1fr);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .axis-corner,
+    .all-day-label {
+      position: sticky;
+      left: 0;
+      z-index: 8;
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      color: var(--muted);
+      font-size: 0.74rem;
+      font-weight: 850;
+      border-right: 1px solid var(--line);
+    }
+
+    .week-day-headings {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+
+    .week-day-heading {
+      padding: 9px 6px;
+      text-align: center;
+      border-right: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+
+    .week-day-heading:last-child { border-right: 0; }
+    .week-day-heading strong { display: block; margin-top: 2px; color: var(--text); font-size: 0.92rem; }
+    .week-day-heading.today strong { color: var(--brand-2); }
+
+    .all-day-body {
+      display: grid;
+      grid-template-columns: var(--day-label-width) minmax(0, 1fr);
+      min-height: 48px;
+    }
+
+    .all-day-track {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      background: var(--surface);
+    }
+
+    .all-day-column {
+      border-right: 1px solid var(--line);
+    }
+
+    .all-day-column:last-child { border-right: 0; }
+    .all-day-column.today { background: var(--today); }
+
+    .all-day-event {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      height: 26px;
+      padding: 0 8px;
+      border-radius: 7px;
+      font-size: 0.72rem;
+      line-height: 1.1;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .vertical-week-grid {
+      display: grid;
+      grid-template-columns: var(--day-label-width) minmax(0, 1fr);
+      border-top: 1px solid var(--line);
+    }
+
+    .time-axis {
+      position: sticky;
+      left: 0;
+      z-index: 7;
+      min-height: var(--week-hour-height);
+      border-right: 1px solid var(--line);
+      background: var(--surface-2);
+    }
+
+    .time-axis-label {
+      position: absolute;
+      right: 10px;
+      z-index: 2;
+      color: var(--muted);
+      font-size: 0.69rem;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .time-axis-label.gap-before::before {
+      content: "⋯";
+      display: block;
+      margin: -14px 0 5px;
+      color: var(--brand-2);
+      font-size: 0.95rem;
+      letter-spacing: 0.08em;
+    }
+
+    .time-day-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      min-height: var(--week-hour-height);
+      background: var(--surface);
+    }
+
+    .time-day-column {
+      position: relative;
+      min-width: 0;
+      border-right: 1px solid var(--line);
+      background-image: linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+      background-size: 100% var(--week-hour-height);
+    }
+
+    .time-day-column:last-child { border-right: 0; }
+    .time-day-column.today { background-color: var(--today); }
+
+    .time-gap-line {
+      position: absolute;
+      z-index: 1;
+      left: 0;
+      right: 0;
+      height: 0;
+      border-top: 2px dashed color-mix(in srgb, var(--brand-2) 45%, transparent);
+      pointer-events: none;
+    }
+
+    .timed-event {
+      min-width: 34px;
+      padding: 5px 7px;
+      border-radius: 8px;
+      font-size: 0.69rem;
+      line-height: 1.18;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .timed-event .event-content { align-items: flex-start; }
+    .timed-event .pokemon-thumb { width: 30px; height: 30px; }
+    .timed-event .event-text { overflow: visible; text-overflow: clip; }
+
+    .timed-empty {
+      padding: 28px 20px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      background: var(--surface-2);
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: 750;
+    }
+
+    .now-line {
+      position: absolute;
+      z-index: 5;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #ef4444;
+      pointer-events: none;
+    }
+
+    .now-line::before {
+      content: "";
+      position: absolute;
+      top: -3px;
+      left: -4px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ef4444;
+    }
+
+    .list-view { padding: 12px 20px 24px; }
+
+    .list-day {
+      padding: 18px 0 8px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .list-day:last-child { border-bottom: 0; }
+
+    .list-date {
+      margin: 0 0 10px;
+      font-size: 0.92rem;
+      color: var(--muted);
+      font-weight: 850;
+      text-transform: capitalize;
+    }
+
+    .list-event {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 120px minmax(0, 1fr) auto;
+      gap: 13px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-left: 6px solid var(--event-color);
+      border-radius: 13px;
+      background: var(--surface-2);
+      color: var(--text);
+      padding: 13px;
+      margin: 8px 0;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .list-event.has-images { grid-template-columns: 70px 120px minmax(0, 1fr) auto; }
+
+    .list-pokemon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 0;
+    }
+
+    .list-pokemon .pokemon-thumb { width: 54px; height: 54px; }
+    .list-pokemon .pokemon-more { margin-left: -10px; }
+
+    .list-time {
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 0.78rem;
+      line-height: 1.35;
+    }
+
+    .list-title { font-weight: 850; line-height: 1.35; }
+
+    .list-category {
+      display: inline-flex;
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: var(--event-color);
+      color: var(--event-text, white);
+      font-size: 0.68rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .empty,
+    .loading {
+      padding: 55px 20px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .helpful-links {
+      margin-top: 22px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .helpful-links-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 18px;
+      margin-bottom: 16px;
+    }
+
+    .helpful-links h2 {
+      margin: 0;
+      font-size: 1.15rem;
+    }
+
+    .helpful-links-intro {
+      margin: 5px 0 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .resource-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .resource-card {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: var(--surface-2);
+      color: var(--text);
+      text-decoration: none;
+      transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+    }
+
+    .resource-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--brand);
+      background: var(--surface-3);
+    }
+
+    .resource-card:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--brand) 45%, transparent);
+      outline-offset: 2px;
+    }
+
+    .resource-icon {
+      font-size: 1.35rem;
+      line-height: 1;
+    }
+
+    .resource-title {
+      font-weight: 850;
+      line-height: 1.25;
+    }
+
+    .resource-copy {
+      color: var(--muted);
+      font-size: 0.76rem;
+      line-height: 1.45;
+    }
+
+    .resource-domain {
+      margin-top: auto;
+      padding-top: 3px;
+      color: var(--brand);
+      font-size: 0.69rem;
+      font-weight: 800;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: center;
+      padding: 20px 4px 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .footer a { color: inherit; }
+    .admin-link { opacity: .58; text-decoration: none; font-size: .76rem; }
+    .admin-link:hover, .admin-link:focus-visible { opacity: 1; text-decoration: underline; }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(4, 9, 18, 0.72);
+      backdrop-filter: blur(5px);
+    }
+
+    .modal.open { display: flex; }
+
+    .dialog {
+      width: min(580px, 100%);
+      max-height: 88vh;
+      overflow: auto;
+      border-radius: 20px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .dialog-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .dialog h3 { margin: 0; font-size: 1.35rem; line-height: 1.25; }
+
+    .close {
+      width: 38px;
+      height: 38px;
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 1.25rem;
+      cursor: pointer;
+    }
+
+    .modal-pokemon {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 18px 0 4px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface-2);
+    }
+
+    .modal-pokemon[hidden] { display: none; }
+
+    .modal-pokemon-item {
+      display: grid;
+      justify-items: center;
+      gap: 5px;
+      min-width: 92px;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .modal-pokemon-item img {
+      width: 92px;
+      height: 92px;
+      object-fit: contain;
+      filter: drop-shadow(0 8px 10px rgba(15, 23, 42, 0.22));
+    }
+
+    .meta { margin: 15px 0; color: var(--muted); line-height: 1.55; }
+    .description { white-space: pre-line; line-height: 1.6; }
+
+    .detail-link {
+      display: inline-flex;
+      margin-top: 18px;
+      padding: 11px 15px;
+      border-radius: 11px;
+      background: var(--brand);
+      color: white;
+      text-decoration: none;
+      font-weight: 800;
+    }
+
+    @media (max-width: 820px) {
+      .page { width: min(100% - 18px, 1280px); padding-top: 9px; }
+      .hero { grid-template-columns: 1fr; padding: 24px 20px; gap: 20px; border-radius: 18px; }
+      .subscribe { width: 100%; }
+      .panel { border-radius: 18px; }
+      .toolbar { grid-template-columns: 1fr; padding: 14px; }
+      .toolbar h2 { grid-row: 1; }
+      .toolbar-group { justify-content: center; }
+      .toolbar-group:first-child { grid-row: 2; }
+      .toolbar-group:last-child { grid-row: 3; }
+      .legend { padding: 10px 14px; }
+      .week-hint { display: block; }
+      .list-view { padding: 6px 14px 20px; }
+      .list-event { grid-template-columns: 92px minmax(0, 1fr); }
+      .list-event.has-images { grid-template-columns: 62px 82px minmax(0, 1fr); }
+      .list-event.has-images .list-category { grid-column: 3; }
+      .list-pokemon .pokemon-thumb { width: 46px; height: 46px; }
+      .list-category { grid-column: 2; justify-self: start; }
+      .helpful-links { padding: 20px 16px; border-radius: 18px; }
+      .helpful-links-head { align-items: flex-start; }
+      .resource-grid { grid-template-columns: 1fr; }
+      .resource-card { padding: 14px 15px; }
+      .footer { flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Automatisch aktualisiert</p>
+        <div class="brand-title">
+          <img class="brand-logo" src="/favicon.svg" alt="" width="52" height="52">
+          <h1>Pokémon-GO-Eventkalender</h1>
+        </div>
+        <p class="hero-copy">Alle ausgewählten Events übersichtlich auf Deutsch. Mehrtägige Events laufen als durchgehende Balken über den Kalender. Tippe einen Termin für Details an oder abonniere ihn dauerhaft.</p>
+        <div class="data-badge" id="data-badge"><span class="data-dot"></span><span id="data-status">Datenstand wird geladen …</span></div>
+      </div>
+      <a class="subscribe" href="__WEBCAL_URL__">Kalender abonnieren</a>
+    </section>
+
+    <section class="panel">
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <button class="control" id="prev" aria-label="Vorheriger Zeitraum">‹</button>
+          <button class="control" id="today">Heute</button>
+          <button class="control" id="next" aria-label="Nächster Zeitraum">›</button>
+        </div>
+        <h2 id="period-title">Kalender wird geladen …</h2>
+        <div class="toolbar-group" aria-label="Kalenderansicht">
+          <button class="control active" id="month-button">Monat</button>
+          <button class="control" id="week-button">Woche</button>
+          <button class="control" id="list-button">Liste</button>
+        </div>
+      </div>
+
+      <div class="legend" id="legend"></div>
+      <div id="loading" class="loading">Events werden geladen …</div>
+
+      <div id="month-view" class="view">
+        <div class="month-scroll">
+          <div class="month-canvas">
+            <div class="weekdays">
+              <div>Mo</div><div>Di</div><div>Mi</div><div>Do</div><div>Fr</div><div>Sa</div><div>So</div>
+            </div>
+            <div id="month-weeks"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="week-view" class="view">
+        <div class="week-hint">Für alle Wochentage horizontal wischen. Leere Stunden werden automatisch ausgeblendet.</div>
+        <div class="week-scroll">
+          <div class="week-canvas">
+            <section class="all-day-section">
+              <div class="all-day-header">
+                <div class="axis-corner">Tage</div>
+                <div class="week-day-headings" id="week-day-headings"></div>
+              </div>
+              <div class="all-day-body" id="all-day-body">
+                <div class="all-day-label">Ganztägig</div>
+                <div class="all-day-track" id="all-day-track"></div>
+              </div>
+            </section>
+            <section>
+              <div class="vertical-week-grid" id="vertical-week-grid">
+                <div class="time-axis" id="time-axis"></div>
+                <div class="time-day-grid" id="time-day-grid"></div>
+              </div>
+              <div class="timed-empty" id="timed-empty" hidden>In dieser Woche gibt es keine Events mit fester Uhrzeit.</div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <div id="list-view" class="view list-view"></div>
+    </section>
+
+    <section class="helpful-links" aria-labelledby="helpful-links-title">
+      <div class="helpful-links-head">
+        <div>
+          <h2 id="helpful-links-title">Hilfreiche Pokémon-GO-Links</h2>
+          <p class="helpful-links-intro">Datenbank, Angreifer-Ranglisten und aktuelle Konter gegen die Team-GO-Rocket-Bosse.</p>
+        </div>
+      </div>
+
+      <div class="resource-grid">
+        <a class="resource-card" href="https://db.pokemongohub.net/de" target="_blank" rel="noopener noreferrer">
+          <span class="resource-icon" aria-hidden="true">🔎</span>
+          <span class="resource-title">Pokémon-Datenbank</span>
+          <span class="resource-copy">Werte, Attacken, Typen und weitere Details zu Pokémon.</span>
+          <span class="resource-domain">db.pokemongohub.net</span>
+        </a>
+
+        <a class="resource-card" href="https://pokemongohub.net/post/guide/max-attackers-tier-list/" target="_blank" rel="noopener noreferrer">
+          <span class="resource-icon" aria-hidden="true">⚔️</span>
+          <span class="resource-title">Dynamax-Angreifer</span>
+          <span class="resource-copy">Tier-Liste der besten Angreifer für Dyna- und Gigadynamax-Kämpfe.</span>
+          <span class="resource-domain">pokemongohub.net</span>
+        </a>
+
+        <a class="resource-card" href="https://mein-mmo.de/pokemon-go-sierra-besiegen-beste-konter/" target="_blank" rel="noopener noreferrer">
+          <span class="resource-icon" aria-hidden="true">🟥</span>
+          <span class="resource-title">Sierra besiegen</span>
+          <span class="resource-copy">Aktuelle Teams und empfohlene Konter gegen Sierra.</span>
+          <span class="resource-domain">mein-mmo.de</span>
+        </a>
+
+        <a class="resource-card" href="https://mein-mmo.de/pokemon-go-cliff-besiegen-beste-konter/" target="_blank" rel="noopener noreferrer">
+          <span class="resource-icon" aria-hidden="true">🟦</span>
+          <span class="resource-title">Cliff besiegen</span>
+          <span class="resource-copy">Aktuelle Teams und empfohlene Konter gegen Cliff.</span>
+          <span class="resource-domain">mein-mmo.de</span>
+        </a>
+
+        <a class="resource-card" href="https://mein-mmo.de/pokemon-go-arlo-besiegen-beste-konter/" target="_blank" rel="noopener noreferrer">
+          <span class="resource-icon" aria-hidden="true">🟨</span>
+          <span class="resource-title">Arlo besiegen</span>
+          <span class="resource-copy">Aktuelle Teams und empfohlene Konter gegen Arlo.</span>
+          <span class="resource-domain">mein-mmo.de</span>
+        </a>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span id="footer-data">Daten: LeekDuck.com via ScrapedDuck</span>
+      <span><a href="__CALENDAR_PATH__">Direkter iCal-Feed</a> · <a href="/status">Status</a> · <a class="admin-link" href="/admin">Login</a></span>
+    </footer>
+  </main>
+
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <article class="dialog">
+      <div class="dialog-head">
+        <h3 id="modal-title"></h3>
+        <button class="close" id="close" aria-label="Schließen">×</button>
+      </div>
+      <div class="modal-pokemon" id="modal-pokemon" hidden></div>
+      <div class="meta" id="modal-meta"></div>
+      <div class="description" id="modal-description"></div>
+      <a class="detail-link" id="modal-link" target="_blank" rel="noopener">Details bei LeekDuck</a>
+    </article>
+  </div>
+
+  <script>
+    const state = {
+      events: [],
+      meta: {},
+      cursor: new Date(),
+      view: window.innerWidth <= 820 ? "list" : "month"
+    };
+
+    // Spielnahe, kontrastreiche Palette. Die Farben sind bewusst nicht nur
+    // Blauabstufungen: Raid, Dynamax, Forschung, Rocket und große Live-Events
+    // bleiben dadurch auch bei dicht belegten Kalenderwochen unterscheidbar.
+    const fixedColors = {
+      // Events und große Formate
+      "community-day": "#f97316",
+      "event": "#0ea5a8",
+      "live-event": "#e11d48",
+      "pokemon-go-fest": "#0891b2",
+      "pokemon-go-tour": "#7c3aed",
+      "global-challenge": "#eab308",
+      "safari-zone": "#65a30d",
+      "city-safari": "#84cc16",
+      "wild-area": "#a16207",
+      "ticketed-event": "#c2410c",
+      "ticketed": "#c2410c",
+      "location-specific": "#15803d",
+      "bonus-hour": "#f59e0b",
+      "pokemon-spotlight-hour": "#facc15",
+      "potential-ultra-unlock": "#a855f7",
+      "season": "#0284c7",
+      "go-pass": "#d97706",
+      "pokestop-showcase": "#0ea5e9",
+      "choose-your-path": "#65a30d",
+      "hatch-day": "#f59e0b",
+      "update": "#64748b",
+
+      // Forschung
+      "research": "#10b981",
+      "timed-research": "#14b8a6",
+      "limited-research": "#22c55e",
+      "research-breakthrough": "#06b6d4",
+      "special-research": "#0f766e",
+      "research-day": "#16a34a",
+
+      // Raids, Kämpfe und Dynamax
+      "raid-day": "#ef4444",
+      "raid-battles": "#6d28d9",
+      "raid-hour": "#dc2626",
+      "raid-weekend": "#f97316",
+      "elite-raids": "#991b1b",
+      "go-battle-league": "#2563eb",
+      "max-battles": "#a21caf",
+      "max-mondays": "#db2777",
+
+      // Team GO Rocket
+      "go-rocket-takeover": "#7f1d1d",
+      "team-go-rocket": "#1f2937",
+      "giovanni-special-research": "#450a0a",
+
+      // Manuell gepflegte Events
+      "manual-event": "#0f766e",
+      "manual-meetup": "#16a34a",
+      "manual-raid": "#be123c",
+      "manual-reminder": "#7c3aed"
+    };
+
+    // Farbenblind-freundliche Ausweichpalette für zukünftige, unbekannte Typen.
+    const fallbackColors = [
+      "#d55e00", "#009e73", "#cc79a7", "#e69f00",
+      "#0072b2", "#6d28d9", "#ca8a04", "#0f766e",
+      "#be123c", "#4d7c0f", "#9333ea", "#b45309"
+    ];
+
+    const formatMonth = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric" });
+    const formatDay = new Intl.DateTimeFormat("de-DE", { weekday: "long", day: "2-digit", month: "long" });
+    const formatShortDay = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+    const formatDateTime = new Intl.DateTimeFormat("de-DE", {
+      weekday: "long", day: "2-digit", month: "long", year: "numeric",
+      hour: "2-digit", minute: "2-digit"
+    });
+    const formatDate = new Intl.DateTimeFormat("de-DE", {
+      weekday: "long", day: "2-digit", month: "long", year: "numeric"
+    });
+    const formatTime = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit" });
+    const formatUpdated = new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
+    });
+
+    const pad = number => String(number).padStart(2, "0");
+    const startOfDay = date => new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const addDays = (date, days) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+    const startOfWeek = date => addDays(startOfDay(date), -((date.getDay() + 6) % 7));
+    const dateKey = date => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    const dayStamp = date => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+    const dayDiff = (from, to) => Math.round((dayStamp(to) - dayStamp(from)) / 86400000);
+    const sameDay = (a, b) => dateKey(a) === dateKey(b);
+
+    function colorForType(type) {
+      const normalized = type || "event";
+      if (fixedColors[normalized]) return fixedColors[normalized];
+      let hash = 0;
+      for (const char of normalized) hash = ((hash << 5) - hash + char.charCodeAt(0)) | 0;
+      return fallbackColors[Math.abs(hash) % fallbackColors.length];
+    }
+
+    function textColorForBackground(color) {
+      const hex = String(color).replace("#", "");
+      if (!/^[0-9a-f]{6}$/i.test(hex)) return "#ffffff";
+      const channels = [0, 2, 4].map(index => parseInt(hex.slice(index, index + 2), 16) / 255);
+      const linear = channels.map(value => value <= 0.04045
+        ? value / 12.92
+        : Math.pow((value + 0.055) / 1.055, 2.4));
+      const luminance = 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+      const whiteContrast = 1.05 / (luminance + 0.05);
+      const darkContrast = (luminance + 0.05) / 0.05;
+      return darkContrast >= whiteContrast ? "#111827" : "#ffffff";
+    }
+
+    function applyEventColors(element, type) {
+      const color = colorForType(type);
+      element.style.setProperty("--event-color", color);
+      element.style.setProperty("--event-text", textColorForBackground(color));
+    }
+
+    function parseEventDate(value) {
+      const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+      if (!match) return new Date(value);
+      return new Date(
+        Number(match[1]), Number(match[2]) - 1, Number(match[3]),
+        Number(match[4]), Number(match[5]), Number(match[6])
+      );
+    }
+
+    function eventStart(event) { return parseEventDate(event.start); }
+    function eventEnd(event) { return parseEventDate(event.end); }
+    function effectiveEnd(event) {
+      const start = eventStart(event);
+      const end = eventEnd(event);
+      return new Date(Math.max(start.getTime(), end.getTime() - 1));
+    }
+
+    function isAllDayRange(start, end) {
+      const duration = end.getTime() - start.getTime();
+      const midnightRange = start.getHours() === 0 && start.getMinutes() === 0 && end.getHours() === 0 && end.getMinutes() === 0;
+      return duration >= 86400000 || midnightRange;
+    }
+
+    function isAllDayLike(event) {
+      return Boolean(event.allDay) || isAllDayRange(eventStart(event), eventEnd(event));
+    }
+
+    function overlaps(event, rangeStart, rangeEndExclusive) {
+      return eventEnd(event) > rangeStart && eventStart(event) < rangeEndExclusive;
+    }
+
+    function assignLanes(segments, startField, endField, allowTouching = false) {
+      const laneEnds = [];
+      segments.sort((a, b) => a[startField] - b[startField] || b[endField] - a[endField]);
+      for (const segment of segments) {
+        let lane = laneEnds.findIndex(end => allowTouching ? segment[startField] >= end : segment[startField] > end);
+        if (lane === -1) {
+          lane = laneEnds.length;
+          laneEnds.push(segment[endField]);
+        } else {
+          laneEnds[lane] = segment[endField];
+        }
+        segment.lane = lane;
+      }
+      return laneEnds.length;
+    }
+
+    function monthSegments(weekStart) {
+      const weekEnd = addDays(weekStart, 7);
+      const segments = [];
+      for (const event of state.events) {
+        if (!overlaps(event, weekStart, weekEnd)) continue;
+        const actualStartDay = startOfDay(eventStart(event));
+        const actualEndDay = startOfDay(effectiveEnd(event));
+        const clippedStart = actualStartDay < weekStart ? weekStart : actualStartDay;
+        const clippedEnd = actualEndDay >= weekEnd ? addDays(weekEnd, -1) : actualEndDay;
+        const startCol = dayDiff(weekStart, clippedStart);
+        const endCol = dayDiff(weekStart, clippedEnd);
+        segments.push({
+          event,
+          startCol,
+          endCol,
+          span: endCol - startCol + 1,
+          continuesBefore: actualStartDay < weekStart,
+          continuesAfter: actualEndDay >= weekEnd
+        });
+      }
+      const laneCount = assignLanes(segments, "startCol", "endCol");
+      return { segments, laneCount };
+    }
+
+    function pokemonImages(event) {
+      return Array.isArray(event.pokemonImages) ? event.pokemonImages.filter(image => image && image.url) : [];
+    }
+
+    function createPokemonThumbs(event, maxImages = 1, className = "") {
+      const images = pokemonImages(event);
+      if (!images.length) return null;
+      const wrapper = document.createElement("span");
+      wrapper.className = `pokemon-thumbs ${className}`.trim();
+      for (const image of images.slice(0, maxImages)) {
+        const img = document.createElement("img");
+        img.className = "pokemon-thumb";
+        img.src = image.url;
+        img.alt = image.name || "Pokémon";
+        img.loading = "lazy";
+        img.decoding = "async";
+        img.addEventListener("error", () => {
+          img.remove();
+          if (!wrapper.querySelector("img")) wrapper.remove();
+        });
+        wrapper.appendChild(img);
+      }
+      if (images.length > maxImages) {
+        const more = document.createElement("span");
+        more.className = "pokemon-more";
+        more.textContent = `+${images.length - maxImages}`;
+        wrapper.appendChild(more);
+      }
+      return wrapper;
+    }
+
+    function appendEventContent(button, event, text, maxImages = 1) {
+      const content = document.createElement("span");
+      content.className = "event-content";
+      const thumbs = createPokemonThumbs(event, maxImages);
+      if (thumbs) content.appendChild(thumbs);
+      const label = document.createElement("span");
+      label.className = "event-text";
+      label.textContent = text;
+      content.appendChild(label);
+      button.appendChild(content);
+    }
+
+    function createColoredButton(className, event, text) {
+      const button = document.createElement("button");
+      button.className = className;
+      appendEventContent(button, event, text, 1);
+      applyEventColors(button, event.eventType);
+      button.title = event.title;
+      button.addEventListener("click", () => openEvent(event));
+      return button;
+    }
+
+    function renderLegend() {
+      const legend = document.getElementById("legend");
+      legend.replaceChildren();
+      const types = new Map();
+      for (const event of state.events) {
+        if (!types.has(event.eventType)) types.set(event.eventType, event.category || event.eventType || "Event");
+      }
+      [...types.entries()]
+        .sort((a, b) => a[1].localeCompare(b[1], "de"))
+        .forEach(([type, label]) => {
+          const item = document.createElement("span");
+          item.className = "legend-item";
+          const dot = document.createElement("span");
+          dot.className = "legend-dot";
+          dot.style.setProperty("--legend-color", colorForType(type));
+          const text = document.createElement("span");
+          text.textContent = label;
+          item.append(dot, text);
+          legend.appendChild(item);
+        });
+    }
+
+    function renderDataStatus() {
+      const badge = document.getElementById("data-badge");
+      const label = document.getElementById("data-status");
+      const footer = document.getElementById("footer-data");
+      const updated = state.meta.updatedAt ? new Date(state.meta.updatedAt) : null;
+      badge.classList.toggle("stale", Boolean(state.meta.stale));
+      if (updated && !Number.isNaN(updated.getTime())) {
+        const prefix = state.meta.stale ? "Letzter Datenstand" : "Datenstand";
+        label.textContent = `${prefix}: ${formatUpdated.format(updated)} Uhr`;
+        const manualText = Number(state.meta.manualCount || 0) > 0 ? ` · ${state.meta.manualCount} manuell` : "";
+        footer.textContent = `Datenstand: ${formatUpdated.format(updated)} Uhr${manualText} · LeekDuck.com via ScrapedDuck`;
+      } else {
+        label.textContent = "Datenstand derzeit unbekannt";
+      }
+    }
+
+    function updateTitle() {
+      const title = document.getElementById("period-title");
+      if (state.view === "week") {
+        const start = startOfWeek(state.cursor);
+        const end = addDays(start, 6);
+        const startText = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "long" }).format(start);
+        const endText = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "long", year: "numeric" }).format(end);
+        title.textContent = `${startText} – ${endText}`;
+      } else {
+        title.textContent = formatMonth.format(state.cursor);
+      }
+    }
+
+    function renderMonth() {
+      const container = document.getElementById("month-weeks");
+      container.replaceChildren();
+      const today = new Date();
+      const first = new Date(state.cursor.getFullYear(), state.cursor.getMonth(), 1);
+      let weekStart = startOfWeek(first);
+
+      for (let weekIndex = 0; weekIndex < 6; weekIndex += 1) {
+        const { segments, laneCount } = monthSegments(weekStart);
+        const rowHeight = Math.max(112, 45 + Math.max(laneCount, 1) * 29 + 10);
+        const week = document.createElement("div");
+        week.className = "month-week";
+        week.style.height = `${rowHeight}px`;
+
+        for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
+          const date = addDays(weekStart, dayIndex);
+          const cell = document.createElement("div");
+          cell.className = "month-day";
+          if (date.getMonth() !== state.cursor.getMonth()) cell.classList.add("outside");
+          if (sameDay(date, today)) cell.classList.add("today");
+          const number = document.createElement("span");
+          number.className = "day-number";
+          number.textContent = date.getDate();
+          cell.appendChild(number);
+          week.appendChild(cell);
+        }
+
+        for (const segment of segments) {
+          const event = segment.event;
+          const start = eventStart(event);
+          const timedPrefix = !isAllDayLike(event) && !segment.continuesBefore && segment.startCol === dayDiff(weekStart, startOfDay(start))
+            ? `${formatTime.format(start)} `
+            : "";
+          const button = createColoredButton("month-event", event, `${timedPrefix}${event.title}`);
+          button.classList.toggle("continues-before", segment.continuesBefore);
+          button.classList.toggle("continues-after", segment.continuesAfter);
+          button.style.left = `calc(${(segment.startCol / 7) * 100}% + 3px)`;
+          button.style.width = `calc(${(segment.span / 7) * 100}% - 6px)`;
+          button.style.top = `${41 + segment.lane * 29}px`;
+          week.appendChild(button);
+        }
+
+        container.appendChild(week);
+        weekStart = addDays(weekStart, 7);
+      }
+    }
+
+    function weekAllDaySegments(weekStart) {
+      const weekEnd = addDays(weekStart, 7);
+      const segments = [];
+      for (const event of state.events.filter(isAllDayLike)) {
+        if (!overlaps(event, weekStart, weekEnd)) continue;
+        const actualStart = startOfDay(eventStart(event));
+        const actualEnd = startOfDay(effectiveEnd(event));
+        const clippedStart = actualStart < weekStart ? weekStart : actualStart;
+        const clippedEnd = actualEnd >= weekEnd ? addDays(weekEnd, -1) : actualEnd;
+        const startCol = dayDiff(weekStart, clippedStart);
+        const endCol = dayDiff(weekStart, clippedEnd);
+        segments.push({
+          event,
+          startCol,
+          endCol,
+          span: endCol - startCol + 1,
+          continuesBefore: actualStart < weekStart,
+          continuesAfter: actualEnd >= weekEnd
+        });
+      }
+      const laneCount = assignLanes(segments, "startCol", "endCol");
+      return { segments, laneCount };
+    }
+
+    function timedSegmentsForDay(day) {
+      const nextDay = addDays(day, 1);
+      const segments = [];
+      for (const event of state.events) {
+        if (isAllDayLike(event) || !overlaps(event, day, nextDay)) continue;
+        const start = eventStart(event) < day ? day : eventStart(event);
+        const end = eventEnd(event) > nextDay ? nextDay : eventEnd(event);
+        const startMinute = start.getHours() * 60 + start.getMinutes();
+        const rawEndMinute = end >= nextDay ? 1440 : end.getHours() * 60 + end.getMinutes();
+        const endMinute = Math.max(startMinute + 15, rawEndMinute);
+        segments.push({ event, startMinute, endMinute, segmentStart: start, segmentEnd: end });
+      }
+      const laneCount = assignLanes(segments, "startMinute", "endMinute", true);
+      return { segments, laneCount: Math.max(laneCount, 1) };
+    }
+
+    function visibleWeekHours(daySegments) {
+      const occupied = new Set();
+      for (const { segments } of daySegments) {
+        for (const segment of segments) {
+          const firstHour = Math.max(0, Math.floor(segment.startMinute / 60));
+          const lastHour = Math.min(23, Math.ceil(segment.endMinute / 60) - 1);
+          for (let hour = firstHour; hour <= lastHour; hour += 1) occupied.add(hour);
+        }
+      }
+      return [...occupied].sort((a, b) => a - b);
+    }
+
+    function minuteToCompressedY(minute, visibleHours, hourHeight, endBoundary = false) {
+      if (!visibleHours.length) return 0;
+      if (minute >= 1440) return visibleHours.length * hourHeight;
+
+      const hour = Math.floor(minute / 60);
+      const withinHour = minute % 60;
+      const exactIndex = visibleHours.indexOf(hour);
+      if (exactIndex !== -1) {
+        return exactIndex * hourHeight + (withinHour / 60) * hourHeight;
+      }
+
+      if (endBoundary && withinHour === 0) {
+        const previousIndex = visibleHours.indexOf(hour - 1);
+        if (previousIndex !== -1) return (previousIndex + 1) * hourHeight;
+      }
+
+      const nextIndex = visibleHours.findIndex(value => value > hour);
+      return (nextIndex === -1 ? visibleHours.length : nextIndex) * hourHeight;
+    }
+
+    function renderWeek() {
+      const weekStart = startOfWeek(state.cursor);
+      const today = new Date();
+      const headings = document.getElementById("week-day-headings");
+      const allDayTrack = document.getElementById("all-day-track");
+      const timeAxis = document.getElementById("time-axis");
+      const timeDayGrid = document.getElementById("time-day-grid");
+      const verticalGrid = document.getElementById("vertical-week-grid");
+      const timedEmpty = document.getElementById("timed-empty");
+      headings.replaceChildren();
+      allDayTrack.replaceChildren();
+      timeAxis.replaceChildren();
+      timeDayGrid.replaceChildren();
+
+      for (let index = 0; index < 7; index += 1) {
+        const day = addDays(weekStart, index);
+        const heading = document.createElement("div");
+        heading.className = "week-day-heading";
+        if (sameDay(day, today)) heading.classList.add("today");
+        heading.innerHTML = `${new Intl.DateTimeFormat("de-DE", { weekday: "short" }).format(day)}<strong>${pad(day.getDate())}.${pad(day.getMonth() + 1)}.</strong>`;
+        headings.appendChild(heading);
+
+        const column = document.createElement("div");
+        column.className = "all-day-column";
+        if (sameDay(day, today)) column.classList.add("today");
+        allDayTrack.appendChild(column);
+      }
+
+      const { segments: allDaySegments, laneCount } = weekAllDaySegments(weekStart);
+      const allDayHeight = Math.max(48, 8 + Math.max(laneCount, 1) * 31);
+      allDayTrack.style.height = `${allDayHeight}px`;
+      document.getElementById("all-day-body").style.minHeight = `${allDayHeight}px`;
+
+      for (const segment of allDaySegments) {
+        const button = createColoredButton("all-day-event", segment.event, segment.event.title);
+        button.classList.toggle("continues-before", segment.continuesBefore);
+        button.classList.toggle("continues-after", segment.continuesAfter);
+        button.style.left = `calc(${(segment.startCol / 7) * 100}% + 3px)`;
+        button.style.width = `calc(${(segment.span / 7) * 100}% - 6px)`;
+        button.style.top = `${5 + segment.lane * 31}px`;
+        allDayTrack.appendChild(button);
+      }
+
+      const daySegments = [];
+      for (let index = 0; index < 7; index += 1) {
+        daySegments.push(timedSegmentsForDay(addDays(weekStart, index)));
+      }
+
+      const visibleHours = visibleWeekHours(daySegments);
+      const hourHeight = 72;
+      const gridHeight = Math.max(hourHeight, visibleHours.length * hourHeight);
+      const hasTimedEvents = visibleHours.length > 0;
+      verticalGrid.hidden = !hasTimedEvents;
+      timedEmpty.hidden = hasTimedEvents;
+      if (!hasTimedEvents) return;
+
+      timeAxis.style.height = `${gridHeight}px`;
+      timeDayGrid.style.height = `${gridHeight}px`;
+
+      visibleHours.forEach((hour, index) => {
+        const label = document.createElement("span");
+        label.className = "time-axis-label";
+        if (index > 0 && hour > visibleHours[index - 1] + 1) {
+          label.classList.add("gap-before");
+          label.title = `${hour - visibleHours[index - 1] - 1} leere Stunde(n) ausgeblendet`;
+        }
+        label.textContent = `${pad(hour)}:00`;
+        label.style.top = `${index * hourHeight + 8}px`;
+        timeAxis.appendChild(label);
+      });
+
+      for (let index = 0; index < 7; index += 1) {
+        const day = addDays(weekStart, index);
+        const column = document.createElement("div");
+        column.className = "time-day-column";
+        column.style.height = `${gridHeight}px`;
+        if (sameDay(day, today)) column.classList.add("today");
+
+        visibleHours.forEach((hour, hourIndex) => {
+          if (hourIndex > 0 && hour > visibleHours[hourIndex - 1] + 1) {
+            const gapLine = document.createElement("div");
+            gapLine.className = "time-gap-line";
+            gapLine.style.top = `${hourIndex * hourHeight}px`;
+            column.appendChild(gapLine);
+          }
+        });
+
+        const { segments, laneCount: timedLaneCount } = daySegments[index];
+        for (const segment of segments) {
+          const top = minuteToCompressedY(segment.startMinute, visibleHours, hourHeight);
+          const bottom = minuteToCompressedY(segment.endMinute, visibleHours, hourHeight, true);
+          const durationText = `${formatTime.format(segment.segmentStart)}–${formatTime.format(segment.segmentEnd)}`;
+          const button = createColoredButton("timed-event", segment.event, `${durationText} ${segment.event.title}`);
+          const laneWidth = 100 / timedLaneCount;
+          button.style.top = `${top + 2}px`;
+          button.style.height = `${Math.max(28, bottom - top - 4)}px`;
+          button.style.left = `calc(${segment.lane * laneWidth}% + 3px)`;
+          button.style.width = `calc(${laneWidth}% - 6px)`;
+          column.appendChild(button);
+        }
+
+        if (sameDay(day, today)) {
+          const nowMinute = today.getHours() * 60 + today.getMinutes();
+          const currentHour = Math.floor(nowMinute / 60);
+          if (visibleHours.includes(currentHour)) {
+            const line = document.createElement("div");
+            line.className = "now-line";
+            line.style.top = `${minuteToCompressedY(nowMinute, visibleHours, hourHeight)}px`;
+            column.appendChild(line);
+          }
+        }
+
+        timeDayGrid.appendChild(column);
+      }
+    }
+
+    function renderList() {
+      const list = document.getElementById("list-view");
+      list.replaceChildren();
+      const monthStart = new Date(state.cursor.getFullYear(), state.cursor.getMonth(), 1);
+      const monthEnd = new Date(state.cursor.getFullYear(), state.cursor.getMonth() + 1, 1);
+      const events = state.events
+        .filter(event => overlaps(event, monthStart, monthEnd))
+        .sort((a, b) => eventStart(a) - eventStart(b));
+
+      if (!events.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "In diesem Monat gibt es keine eingetragenen Events.";
+        list.appendChild(empty);
+        return;
+      }
+
+      const groups = new Map();
+      for (const event of events) {
+        const key = dateKey(eventStart(event));
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(event);
+      }
+
+      for (const [key, dayEvents] of groups) {
+        const wrapper = document.createElement("section");
+        wrapper.className = "list-day";
+        const title = document.createElement("h3");
+        title.className = "list-date";
+        title.textContent = formatDay.format(new Date(`${key}T12:00:00`));
+        wrapper.appendChild(title);
+
+        for (const event of dayEvents) {
+          const button = document.createElement("button");
+          button.className = "list-event";
+          applyEventColors(button, event.eventType);
+
+          const listImages = pokemonImages(event);
+          if (listImages.length) {
+            button.classList.add("has-images");
+            const media = createPokemonThumbs(event, 1, "list-pokemon");
+            if (media) button.appendChild(media);
+          }
+
+          const time = document.createElement("span");
+          time.className = "list-time";
+          time.textContent = formatEventRange(eventStart(event), eventEnd(event), true);
+
+          const eventTitle = document.createElement("span");
+          eventTitle.className = "list-title";
+          eventTitle.textContent = event.title;
+
+          const category = document.createElement("span");
+          category.className = "list-category";
+          category.textContent = event.category || "Event";
+
+          button.append(time, eventTitle, category);
+          button.addEventListener("click", () => openEvent(event));
+          wrapper.appendChild(button);
+        }
+        list.appendChild(wrapper);
+      }
+    }
+
+    function formatEventRange(start, end, compact = false) {
+      const inclusiveEnd = new Date(Math.max(start.getTime(), end.getTime() - 1));
+      if (isAllDayRange(start, end)) {
+        if (sameDay(start, inclusiveEnd)) return compact ? "Ganztägig" : `${formatDate.format(start)} · ganztägig`;
+        return compact
+          ? `${formatShortDay.format(start)} – ${formatShortDay.format(inclusiveEnd)}`
+          : `${formatDate.format(start)} – ${formatDate.format(inclusiveEnd)}`;
+      }
+      if (sameDay(start, end)) {
+        return compact
+          ? `${formatTime.format(start)} – ${formatTime.format(end)}`
+          : `${formatDateTime.format(start)} – ${formatTime.format(end)}`;
+      }
+      return compact
+        ? `${formatShortDay.format(start)}, ${formatTime.format(start)} – ${formatShortDay.format(end)}, ${formatTime.format(end)}`
+        : `${formatDateTime.format(start)} – ${formatDateTime.format(end)}`;
+    }
+
+    function openEvent(event) {
+      const start = eventStart(event);
+      const end = eventEnd(event);
+      document.getElementById("modal-title").textContent = event.title;
+      const gallery = document.getElementById("modal-pokemon");
+      gallery.replaceChildren();
+      const images = pokemonImages(event);
+      gallery.hidden = !images.length;
+      for (const image of images) {
+        const item = document.createElement("div");
+        item.className = "modal-pokemon-item";
+        const img = document.createElement("img");
+        img.src = image.url;
+        img.alt = image.name || "Pokémon";
+        img.decoding = "async";
+        img.addEventListener("error", () => {
+          item.remove();
+          if (!gallery.children.length) gallery.hidden = true;
+        });
+        const caption = document.createElement("span");
+        caption.textContent = image.name || "Pokémon";
+        item.append(img, caption);
+        gallery.appendChild(item);
+      }
+      const metaParts = [formatEventRange(start, end), event.category || "Event"];
+      if (event.location) metaParts.push(event.location);
+      if (event.isManual) metaParts.push("manuell eingetragen");
+      document.getElementById("modal-meta").textContent = metaParts.join(" · ");
+      document.getElementById("modal-description").textContent = event.description || "";
+      const link = document.getElementById("modal-link");
+      link.hidden = !event.url;
+      link.href = event.url || "#";
+      link.textContent = event.isManual ? "Weiterführenden Link öffnen" : "Details bei LeekDuck";
+      document.getElementById("modal").classList.add("open");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeModal() {
+      document.getElementById("modal").classList.remove("open");
+      document.body.style.overflow = "";
+    }
+
+    function renderCurrentView() {
+      updateTitle();
+      document.querySelectorAll(".view").forEach(element => element.classList.remove("active"));
+      document.getElementById(`${state.view}-view`).classList.add("active");
+      document.getElementById("month-button").classList.toggle("active", state.view === "month");
+      document.getElementById("week-button").classList.toggle("active", state.view === "week");
+      document.getElementById("list-button").classList.toggle("active", state.view === "list");
+      if (state.view === "month") renderMonth();
+      if (state.view === "week") renderWeek();
+      if (state.view === "list") renderList();
+    }
+
+    function setView(view) {
+      state.view = view;
+      try { localStorage.setItem("pogo-calendar-view", view); } catch (_) {}
+      renderCurrentView();
+    }
+
+    function movePeriod(direction) {
+      if (state.view === "week") {
+        state.cursor = addDays(state.cursor, direction * 7);
+      } else {
+        state.cursor = new Date(state.cursor.getFullYear(), state.cursor.getMonth() + direction, 1);
+      }
+      renderCurrentView();
+    }
+
+    document.getElementById("prev").addEventListener("click", () => movePeriod(-1));
+    document.getElementById("next").addEventListener("click", () => movePeriod(1));
+    document.getElementById("today").addEventListener("click", () => {
+      state.cursor = new Date();
+      renderCurrentView();
+    });
+    document.getElementById("month-button").addEventListener("click", () => setView("month"));
+    document.getElementById("week-button").addEventListener("click", () => setView("week"));
+    document.getElementById("list-button").addEventListener("click", () => setView("list"));
+    document.getElementById("close").addEventListener("click", closeModal);
+    document.getElementById("modal").addEventListener("click", event => {
+      if (event.target.id === "modal") closeModal();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") closeModal();
+    });
+
+    try {
+      const savedView = localStorage.getItem("pogo-calendar-view");
+      if (["month", "week", "list"].includes(savedView)) state.view = savedView;
+    } catch (_) {}
+
+    fetch("/api/events", { cache: "no-store" })
+      .then(response => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then(payload => {
+        state.events = Array.isArray(payload) ? payload : (payload.events || []);
+        state.meta = Array.isArray(payload) ? {} : (payload.meta || {});
+        document.getElementById("loading").style.display = "none";
+        renderLegend();
+        renderDataStatus();
+        renderCurrentView();
+      })
+      .catch(error => {
+        document.getElementById("loading").textContent = `Der Kalender konnte nicht geladen werden: ${error.message}`;
+      });
+  </script>
+</body>
+</html>

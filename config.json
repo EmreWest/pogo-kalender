@@ -1,0 +1,67 @@
+{
+  "calendar_name": "Pokémon GO – wichtige Events",
+  "calendar_description": "Meine gefilterten Pokémon-GO-Termine. Daten: LeekDuck.com via ScrapedDuck.",
+  "timezone": "Europe/Berlin",
+  "calendar_path": "/pokemon-go-de.ics",
+  "cache_seconds": 1800,
+  "translations": {
+    "enabled": true,
+    "translate_pokemon_names": true,
+    "pokemon_names_url": "https://raw.githubusercontent.com/PokeAPI/pokeapi/master/data/v2/csv/pokemon_species_names.csv",
+    "pokemon_names_cache_file": "/data/pokemon_names-de.json",
+    "pokemon_names_cache_seconds": 604800,
+    "manual_pokemon_names": {},
+    "manual_phrases": {},
+    "bundled_pokemon_names_file": "/app/pokemon_names-de.json"
+  },
+  "filters": {
+    "include_types": [
+      "community-day",
+      "raid-day",
+      "raid-hour",
+      "raid-battles",
+      "pokemon-spotlight-hour",
+      "research-day",
+      "limited-research",
+      "pokemon-go-fest",
+      "pokemon-go-tour",
+      "event",
+      "max-battles",
+      "max-mondays"
+    ],
+    "exclude_types": [],
+    "include_keywords": [],
+    "exclude_keywords": [
+      "go battle league"
+    ],
+    "require_spawns": null,
+    "require_field_research": null,
+    "past_days": 3,
+    "future_days": 365
+  },
+  "pokemon_images": {
+    "enabled": true,
+    "event_types": [
+      "raid-battles",
+      "raid-hour",
+      "raid-day",
+      "max-battles",
+      "max-mondays"
+    ],
+    "cache_dir": "/data/pokemon-images",
+    "cache_seconds": 2592000,
+    "max_image_bytes": 5242880,
+    "max_per_event": 3,
+    "use_scrapedduck_images": true
+  },
+  "manual_events": {
+    "enabled": true,
+    "file": "/data/manual-events.json",
+    "admin_password": "CHANGE-ME-NOW-2026!",
+    "session_hours": 12,
+    "secure_cookie": true,
+    "max_events": 500,
+    "login_attempts": 5,
+    "login_window_seconds": 900
+  }
+}

@@ -1,0 +1,21 @@
+services:
+  scrapedduck-ical:
+    build: .
+    container_name: scrapedduck-ical
+    restart: unless-stopped
+
+    environment:
+      TZ: Europe/Berlin
+      CONFIG_FILE: /config/config.json
+      PORT: "8080"
+      LOG_LEVEL: INFO
+
+    volumes:
+      - ./config.json:/config/config.json:ro
+      - scrapedduck_ical_data:/data
+
+    ports:
+      - "8080:8080"
+
+volumes:
+  scrapedduck_ical_data:

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="theme-color" content="#111827">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <title>Events verwalten · __CALENDAR_NAME__</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f3f6fb;
+      --surface: #fff;
+      --surface-2: #f8fafc;
+      --surface-3: #eef3f9;
+      --text: #142033;
+      --muted: #667085;
+      --line: #dce3ec;
+      --brand: #2563eb;
+      --brand-dark: #1d4ed8;
+      --danger: #dc2626;
+      --success: #15803d;
+      --warning: #b45309;
+      --shadow: 0 18px 60px rgba(15, 23, 42, .10);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #090e18;
+        --surface: #111827;
+        --surface-2: #182132;
+        --surface-3: #202c40;
+        --text: #f4f7fb;
+        --muted: #a8b3c5;
+        --line: #2b384c;
+        --brand: #4d8dff;
+        --brand-dark: #77a7ff;
+        --danger: #f87171;
+        --success: #4ade80;
+        --warning: #fbbf24;
+        --shadow: 0 18px 60px rgba(0, 0, 0, .35);
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    button, input, textarea, select { font: inherit; }
+    a { color: var(--brand); }
+    .page { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 28px 0 56px; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 18px;
+      padding: 22px 24px; border-radius: 20px; color: white;
+      background: radial-gradient(circle at 90% 0%, rgba(96,165,250,.45), transparent 28%), linear-gradient(135deg,#111827,#1e3a8a);
+      box-shadow: var(--shadow); margin-bottom: 20px;
+    }
+    .brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+    .brand img { width: 46px; height: 46px; flex: 0 0 auto; }
+    h1 { margin: 0; font-size: clamp(1.35rem, 4vw, 2rem); }
+    .subtitle { margin: 5px 0 0; color: rgba(255,255,255,.75); font-size: .88rem; }
+    .top-actions { display: flex; gap: 9px; flex-wrap: wrap; justify-content: flex-end; }
+    .top-link, .button {
+      min-height: 42px; display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid transparent; border-radius: 11px; padding: 0 15px;
+      text-decoration: none; font-weight: 800; cursor: pointer;
+    }
+    .top-link { color: white; border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.10); }
+    .button { background: var(--brand); color: white; }
+    .button:hover { background: var(--brand-dark); }
+    .button.secondary { background: var(--surface-2); color: var(--text); border-color: var(--line); }
+    .button.danger { background: var(--danger); color: white; }
+    .button.small { min-height: 35px; padding: 0 11px; font-size: .78rem; }
+    .button[disabled] { opacity: .55; cursor: wait; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); padding: 24px; }
+    .login-wrap { min-height: 58vh; display: grid; place-items: center; }
+    .login-card { width: min(430px, 100%); }
+    .login-icon { width: 68px; height: 68px; display: block; margin: 0 auto 14px; }
+    .login-card h2 { margin: 0; text-align: center; }
+    .login-card p { color: var(--muted); text-align: center; line-height: 1.55; }
+    .field { display: grid; gap: 7px; min-width: 0; }
+    .field > span, label > span { font-size: .78rem; font-weight: 800; color: var(--muted); }
+    input, textarea, select {
+      width: 100%; border: 1px solid var(--line); border-radius: 11px;
+      background: var(--surface-2); color: var(--text); padding: 11px 12px;
+      outline: none;
+    }
+    input:focus, textarea:focus, select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent); }
+    textarea { min-height: 112px; resize: vertical; line-height: 1.5; }
+    .login-form { display: grid; gap: 13px; margin-top: 20px; }
+    .login-form .button { width: 100%; min-height: 48px; }
+    .notice { margin: 0 0 18px; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--warning) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--warning) 35%, var(--line)); color: var(--text); line-height: 1.45; }
+    .notice[hidden] { display: none; }
+    .flash { min-height: 22px; margin-top: 12px; text-align: center; color: var(--danger); font-size: .84rem; font-weight: 700; }
+    .dashboard[hidden], .login-wrap[hidden] { display: none; }
+    .dashboard-grid { display: grid; grid-template-columns: minmax(320px, .86fr) minmax(380px, 1.14fr); gap: 20px; align-items: start; }
+    .section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
+    .section-head h2 { margin: 0; font-size: 1.2rem; }
+    .section-head p { margin: 5px 0 0; color: var(--muted); font-size: .82rem; line-height: 1.45; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .span-2 { grid-column: 1 / -1; }
+    .checkbox-row {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      border: 1px solid var(--line); border-radius: 11px; background: var(--surface-2);
+    }
+    .checkbox-row input { width: 18px; height: 18px; margin: 0; }
+    .checkbox-row span { color: var(--text); }
+    .form-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+    .hint { color: var(--muted); font-size: .72rem; line-height: 1.45; }
+    .events-list { display: grid; gap: 11px; }
+    .events-empty { color: var(--muted); text-align: center; padding: 42px 14px; border: 1px dashed var(--line); border-radius: 14px; }
+    .event-card { border: 1px solid var(--line); border-radius: 15px; background: var(--surface-2); padding: 15px; }
+    .event-card-head { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; }
+    .event-title { margin: 0; font-size: .98rem; line-height: 1.35; }
+    .event-meta { margin-top: 5px; color: var(--muted); font-size: .76rem; line-height: 1.45; }
+    .event-actions { display: flex; gap: 7px; flex: 0 0 auto; }
+    .event-details { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 11px; }
+    .pill { padding: 5px 8px; border-radius: 999px; background: var(--surface-3); color: var(--muted); font-size: .68rem; font-weight: 800; }
+    .status-line { margin-top: 12px; min-height: 20px; color: var(--muted); font-size: .8rem; }
+    .status-line.error { color: var(--danger); }
+    .status-line.success { color: var(--success); }
+    .footer { padding-top: 20px; color: var(--muted); font-size: .77rem; text-align: center; }
+    @media (max-width: 840px) {
+      .page { width: min(100% - 18px, 1180px); padding-top: 9px; }
+      .topbar { align-items: flex-start; flex-direction: column; border-radius: 18px; padding: 20px; }
+      .top-actions { width: 100%; justify-content: stretch; }
+      .top-actions > * { flex: 1; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .panel { padding: 18px 15px; border-radius: 18px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .span-2 { grid-column: auto; }
+      .event-card-head { flex-direction: column; }
+      .event-actions { width: 100%; }
+      .event-actions .button { flex: 1; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div class="brand">
+        <img src="/favicon.svg" alt="" width="46" height="46">
+        <div>
+          <h1>Manuelle Events verwalten</h1>
+          <p class="subtitle">Passwortgeschützter Bereich des Pokémon-GO-Kalenders</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <a class="top-link" href="/">Zum Kalender</a>
+        <button class="top-link" id="logout" type="button" hidden>Abmelden</button>
+      </div>
+    </header>
+
+    <section class="login-wrap" id="login-wrap">
+      <article class="panel login-card">
+        <img class="login-icon" src="/favicon.svg" alt="" width="68" height="68">
+        <h2>Anmelden</h2>
+        <p>Für diesen Bereich ist nur das in der <code>config.json</code> hinterlegte Passwort erforderlich.</p>
+        <form class="login-form" id="login-form">
+          <label class="field">
+            <span>Passwort</span>
+            <input id="password" type="password" autocomplete="current-password" required autofocus>
+          </label>
+          <button class="button" id="login-button" type="submit">Anmelden</button>
+        </form>
+        <div class="flash" id="login-error" role="alert"></div>
+        <p class="hint" id="https-note" hidden>Die Sitzung verwendet ein Secure-Cookie. Öffne diese Seite deshalb über deine HTTPS-Domain.</p>
+      </article>
+    </section>
+
+    <section class="dashboard" id="dashboard" hidden>
+      <div class="notice" id="default-password-warning" hidden>
+        Du verwendest noch das mitgelieferte Standardpasswort. Ändere <code>manual_events.admin_password</code> in der <code>config.json</code> und starte den Container anschließend neu.
+      </div>
+
+      <div class="dashboard-grid">
+        <article class="panel">
+          <div class="section-head">
+            <div>
+              <h2 id="form-heading">Event hinzufügen</h2>
+              <p>Die Änderung landet dauerhaft in <code>/data/manual-events.json</code> und wird in Webansicht sowie iCal-Feed übernommen.</p>
+            </div>
+          </div>
+
+          <form id="event-form">
+            <input type="hidden" id="event-id">
+            <div class="form-grid">
+              <label class="field span-2">
+                <span>Titel *</span>
+                <input id="title" maxlength="200" required placeholder="z. B. Raid-Treffen Augsburg">
+              </label>
+
+              <label class="field">
+                <span>Eventtyp</span>
+                <input id="type" list="event-types" maxlength="64" value="manual-event" required>
+                <datalist id="event-types">
+                  <option value="manual-event">Manuelles Event</option>
+                  <option value="manual-meetup">Treffen</option>
+                  <option value="manual-raid">Raid-Treffen</option>
+                  <option value="manual-reminder">Erinnerung</option>
+                </datalist>
+              </label>
+
+              <label class="checkbox-row">
+                <input id="all-day" type="checkbox">
+                <span>Ganztägiges Event</span>
+              </label>
+
+              <label class="field">
+                <span id="start-label">Start *</span>
+                <input id="start" type="datetime-local" required>
+              </label>
+
+              <label class="field">
+                <span id="end-label">Ende *</span>
+                <input id="end" type="datetime-local" required>
+              </label>
+
+              <label class="field span-2">
+                <span>Beschreibung</span>
+                <textarea id="description" maxlength="5000" placeholder="Hinweise, Treffpunkt oder weitere Informationen"></textarea>
+              </label>
+
+              <label class="field">
+                <span>Ort</span>
+                <input id="location" maxlength="300" placeholder="z. B. Rathausplatz, Augsburg">
+              </label>
+
+              <label class="field">
+                <span>Weiterführender Link</span>
+                <input id="url" type="url" maxlength="1000" placeholder="https://…">
+              </label>
+
+              <label class="field span-2">
+                <span>Pokémon für Bilder</span>
+                <input id="pokemon" maxlength="650" placeholder="Rayquaza, Kyogre, Groudon">
+                <small class="hint">Mehrere Namen mit Komma trennen. Deutsche und englische Namen werden unterstützt.</small>
+              </label>
+            </div>
+
+            <div class="form-actions">
+              <button class="button" id="save-button" type="submit">Event speichern</button>
+              <button class="button secondary" id="cancel-edit" type="button" hidden>Bearbeiten abbrechen</button>
+            </div>
+            <div class="status-line" id="form-status" role="status"></div>
+          </form>
+        </article>
+
+        <article class="panel">
+          <div class="section-head">
+            <div>
+              <h2>Gespeicherte Events</h2>
+              <p id="event-count">Wird geladen …</p>
+            </div>
+            <button class="button secondary small" id="refresh-events" type="button">Aktualisieren</button>
+          </div>
+          <div class="events-list" id="events-list"></div>
+        </article>
+      </div>
+    </section>
+
+    <footer class="footer">Die Anmeldung gilt nur für dieses Gerät und läuft automatisch ab.</footer>
+  </main>
+
+  <script>
+    const state = { csrf: null, events: [], editingId: null };
+    const loginWrap = document.getElementById("login-wrap");
+    const dashboard = document.getElementById("dashboard");
+    const logoutButton = document.getElementById("logout");
+    const eventForm = document.getElementById("event-form");
+    const allDay = document.getElementById("all-day");
+    const formatDateTime = new Intl.DateTimeFormat("de-DE", {
+      weekday: "short", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
+    });
+    const formatDate = new Intl.DateTimeFormat("de-DE", {
+      weekday: "short", day: "2-digit", month: "2-digit", year: "numeric"
+    });
+
+    function pad(value) { return String(value).padStart(2, "0"); }
+    function localDateTimeValue(date) {
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+    function localDateValue(date) {
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    }
+    function setStatus(message, kind = "") {
+      const element = document.getElementById("form-status");
+      element.textContent = message;
+      element.className = `status-line ${kind}`.trim();
+    }
+    async function request(url, options = {}) {
+      const headers = { ...(options.headers || {}) };
+      if (options.body && !headers["Content-Type"]) headers["Content-Type"] = "application/json";
+      if (state.csrf && options.method && options.method !== "GET") headers["X-CSRF-Token"] = state.csrf;
+      const response = await fetch(url, { cache: "no-store", ...options, headers });
+      let payload = {};
+      try { payload = await response.json(); } catch (_) {}
+      if (!response.ok) {
+        if (response.status === 401 && url !== "/api/admin/login") showLogin();
+        throw new Error(payload.error || `HTTP ${response.status}`);
+      }
+      return payload;
+    }
+    function showLogin() {
+      state.csrf = null;
+      loginWrap.hidden = false;
+      dashboard.hidden = true;
+      logoutButton.hidden = true;
+      document.getElementById("password").focus();
+    }
+    function showDashboard(session) {
+      state.csrf = session.csrf;
+      loginWrap.hidden = true;
+      dashboard.hidden = false;
+      logoutButton.hidden = false;
+      document.getElementById("default-password-warning").hidden = !session.passwordIsDefault;
+      loadEvents();
+    }
+    function setDefaultTimes() {
+      const now = new Date();
+      now.setSeconds(0, 0);
+      now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15);
+      const end = new Date(now.getTime() + 60 * 60 * 1000);
+      document.getElementById("start").value = allDay.checked ? localDateValue(now) : localDateTimeValue(now);
+      document.getElementById("end").value = allDay.checked ? localDateValue(now) : localDateTimeValue(end);
+    }
+    function updateDateInputMode(preserve = true) {
+      const start = document.getElementById("start");
+      const end = document.getElementById("end");
+      const previousStart = start.value;
+      const previousEnd = end.value;
+      start.type = allDay.checked ? "date" : "datetime-local";
+      end.type = allDay.checked ? "date" : "datetime-local";
+      document.getElementById("start-label").textContent = allDay.checked ? "Startdatum *" : "Start *";
+      document.getElementById("end-label").textContent = allDay.checked ? "Enddatum (einschließlich) *" : "Ende *";
+      if (preserve && previousStart) start.value = previousStart.slice(0, allDay.checked ? 10 : 16);
+      if (preserve && previousEnd) end.value = previousEnd.slice(0, allDay.checked ? 10 : 16);
+      if (!start.value || !end.value) setDefaultTimes();
+    }
+    function resetForm() {
+      eventForm.reset();
+      state.editingId = null;
+      document.getElementById("event-id").value = "";
+      document.getElementById("type").value = "manual-event";
+      document.getElementById("form-heading").textContent = "Event hinzufügen";
+      document.getElementById("save-button").textContent = "Event speichern";
+      document.getElementById("cancel-edit").hidden = true;
+      allDay.checked = false;
+      updateDateInputMode(false);
+      setStatus("");
+    }
+    function payloadFromForm() {
+      return {
+        title: document.getElementById("title").value,
+        type: document.getElementById("type").value,
+        all_day: allDay.checked,
+        start: document.getElementById("start").value,
+        end: document.getElementById("end").value,
+        description: document.getElementById("description").value,
+        location: document.getElementById("location").value,
+        url: document.getElementById("url").value,
+        pokemon: document.getElementById("pokemon").value
+      };
+    }
+    function eventRange(event) {
+      if (event.all_day) {
+        const start = new Date(`${event.start}T12:00:00`);
+        const end = new Date(`${event.end_inclusive || event.end}T12:00:00`);
+        return start.getTime() === end.getTime() ? `${formatDate.format(start)} · ganztägig` : `${formatDate.format(start)} – ${formatDate.format(end)}`;
+      }
+      return `${formatDateTime.format(new Date(event.start))} – ${formatDateTime.format(new Date(event.end))}`;
+    }
+    function renderEvents() {
+      const list = document.getElementById("events-list");
+      list.replaceChildren();
+      document.getElementById("event-count").textContent = `${state.events.length} manuelle${state.events.length === 1 ? "s" : ""} Event${state.events.length === 1 ? "" : "s"}`;
+      if (!state.events.length) {
+        const empty = document.createElement("div");
+        empty.className = "events-empty";
+        empty.textContent = "Noch keine manuellen Events gespeichert.";
+        list.appendChild(empty);
+        return;
+      }
+      const sorted = [...state.events].sort((a, b) => String(a.start).localeCompare(String(b.start)));
+      for (const event of sorted) {
+        const card = document.createElement("article");
+        card.className = "event-card";
+        const head = document.createElement("div");
+        head.className = "event-card-head";
+        const copy = document.createElement("div");
+        const title = document.createElement("h3");
+        title.className = "event-title";
+        title.textContent = event.title;
+        const meta = document.createElement("div");
+        meta.className = "event-meta";
+        meta.textContent = eventRange(event);
+        copy.append(title, meta);
+        const actions = document.createElement("div");
+        actions.className = "event-actions";
+        const edit = document.createElement("button");
+        edit.className = "button secondary small";
+        edit.type = "button";
+        edit.textContent = "Bearbeiten";
+        edit.addEventListener("click", () => editEvent(event));
+        const remove = document.createElement("button");
+        remove.className = "button danger small";
+        remove.type = "button";
+        remove.textContent = "Löschen";
+        remove.addEventListener("click", () => deleteEvent(event));
+        actions.append(edit, remove);
+        head.append(copy, actions);
+        card.appendChild(head);
+        const details = document.createElement("div");
+        details.className = "event-details";
+        [event.type, event.location, ...(event.pokemon || [])].filter(Boolean).forEach(value => {
+          const pill = document.createElement("span");
+          pill.className = "pill";
+          pill.textContent = value;
+          details.appendChild(pill);
+        });
+        if (details.children.length) card.appendChild(details);
+        list.appendChild(card);
+      }
+    }
+    async function loadEvents() {
+      try {
+        const payload = await request("/api/admin/events");
+        state.events = payload.events || [];
+        renderEvents();
+      } catch (error) {
+        document.getElementById("events-list").innerHTML = `<div class="events-empty">${error.message}</div>`;
+      }
+    }
+    function editEvent(event) {
+      state.editingId = event.id;
+      document.getElementById("event-id").value = event.id;
+      document.getElementById("title").value = event.title || "";
+      document.getElementById("type").value = event.type || "manual-event";
+      document.getElementById("description").value = event.description || "";
+      document.getElementById("location").value = event.location || "";
+      document.getElementById("url").value = event.url || "";
+      document.getElementById("pokemon").value = (event.pokemon || []).join(", ");
+      allDay.checked = Boolean(event.all_day);
+      updateDateInputMode(false);
+      document.getElementById("start").value = String(event.start || "").slice(0, allDay.checked ? 10 : 16);
+      document.getElementById("end").value = String(allDay.checked ? (event.end_inclusive || event.end) : event.end || "").slice(0, allDay.checked ? 10 : 16);
+      document.getElementById("form-heading").textContent = "Event bearbeiten";
+      document.getElementById("save-button").textContent = "Änderungen speichern";
+      document.getElementById("cancel-edit").hidden = false;
+      setStatus("");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    async function deleteEvent(event) {
+      if (!confirm(`„${event.title}“ wirklich löschen?`)) return;
+      try {
+        await request(`/api/admin/events/${encodeURIComponent(event.id)}`, { method: "DELETE" });
+        if (state.editingId === event.id) resetForm();
+        await loadEvents();
+        setStatus("Event wurde gelöscht.", "success");
+      } catch (error) {
+        setStatus(error.message, "error");
+      }
+    }
+
+    document.getElementById("login-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      const button = document.getElementById("login-button");
+      const errorElement = document.getElementById("login-error");
+      button.disabled = true;
+      errorElement.textContent = "";
+      try {
+        const session = await request("/api/admin/login", {
+          method: "POST", body: JSON.stringify({ password: document.getElementById("password").value })
+        });
+        document.getElementById("password").value = "";
+        showDashboard(session);
+      } catch (error) {
+        errorElement.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    eventForm.addEventListener("submit", async event => {
+      event.preventDefault();
+      const button = document.getElementById("save-button");
+      button.disabled = true;
+      setStatus("Wird gespeichert …");
+      try {
+        const editing = Boolean(state.editingId);
+        const url = editing ? `/api/admin/events/${encodeURIComponent(state.editingId)}` : "/api/admin/events";
+        await request(url, { method: editing ? "PUT" : "POST", body: JSON.stringify(payloadFromForm()) });
+        resetForm();
+        await loadEvents();
+        setStatus(editing ? "Änderungen wurden gespeichert." : "Event wurde hinzugefügt.", "success");
+      } catch (error) {
+        setStatus(error.message, "error");
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    allDay.addEventListener("change", () => updateDateInputMode(true));
+    document.getElementById("cancel-edit").addEventListener("click", resetForm);
+    document.getElementById("refresh-events").addEventListener("click", loadEvents);
+    logoutButton.addEventListener("click", async () => {
+      try { await request("/api/admin/logout", { method: "POST", body: "{}" }); } catch (_) {}
+      showLogin();
+    });
+
+    if (location.protocol !== "https:") document.getElementById("https-note").hidden = false;
+    resetForm();
+    request("/api/admin/session")
+      .then(session => session.authenticated ? showDashboard(session) : showLogin())
+      .catch(showLogin);
+  </script>
+</body>
+</html>
