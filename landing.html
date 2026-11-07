@@ -1360,6 +1360,145 @@
       .featured-track { scrollbar-width: none; margin: 0 -12px; padding: 0 12px 2px; }
       .featured-track::-webkit-scrollbar { display: none; }
     }
+
+    /* ---------- Hub: Demnächst, Filter, Merkliste, Aktuell, Abo ---------- */
+    .legend { display: none; }
+    .m-chips[hidden], .chips-bar[hidden] { display: none !important; }
+    .hub-card > div { padding-right: 14px; }
+    .chips-bar { padding: 10px 18px; border-bottom: 1px solid var(--line); }
+    .chips-bar .m-chips { margin: 0; padding: 0; flex-wrap: wrap; overflow: visible; }
+    .m-chip.fav-chip .m-star { color: #f59e0b; font-size: .9rem; line-height: 1; }
+    .m-chip.fav-chip.active .m-star { color: white; }
+
+    .upcoming { margin-bottom: 14px; }
+    .upcoming[hidden] { display: none; }
+    .upcoming-track { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+    .upcoming-track::-webkit-scrollbar { display: none; }
+    .upcoming-item {
+      flex: 0 0 auto;
+      display: grid;
+      gap: 2px;
+      min-width: 210px;
+      max-width: 300px;
+      padding: 10px 14px 10px 12px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--event-color);
+      border-radius: 14px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      color: var(--text);
+      text-align: left;
+      font: inherit;
+      cursor: pointer;
+    }
+    .upcoming-when { color: var(--muted); font-size: .72rem; font-weight: 850; }
+    .upcoming-when.live { color: var(--success); }
+    .upcoming-title { overflow: hidden; font-size: .88rem; font-weight: 800; white-space: nowrap; text-overflow: ellipsis; }
+    .upcoming-count { color: var(--brand); font-size: .76rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+    .dialog-actions { display: flex; align-items: flex-start; gap: 8px; }
+    .star-button {
+      width: 42px;
+      height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: var(--surface-2);
+      color: var(--muted);
+      font-size: 1.25rem;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .star-button[aria-pressed="true"] { color: #f59e0b; border-color: #f59e0b; background: color-mix(in srgb, #f59e0b 12%, var(--surface)); }
+
+    .hub-view { padding: 18px; }
+    .hub-weather {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface-2);
+    }
+    .hub-weather-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .hub-weather-head h3 { margin: 0; font-size: 1.05rem; }
+    .hub-weather-head span { color: var(--muted); font-size: .8rem; font-weight: 700; }
+    .type-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+    .type-pill {
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: var(--type-color, #64748b);
+      color: white;
+      font-size: .72rem;
+      font-weight: 850;
+    }
+    .hub-forecast { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+    .hub-forecast::-webkit-scrollbar { display: none; }
+    .hub-hour { flex: 0 0 auto; min-width: 74px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 10px; text-align: center; font-size: .72rem; }
+    .hub-hour strong { display: block; font-size: .78rem; }
+    .hub-note { margin: 0; color: var(--muted); font-size: .72rem; line-height: 1.5; }
+    .hub-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin-bottom: 14px; padding: 3px; border-radius: 12px; background: var(--surface-3); }
+    .hub-tabs button { min-height: 36px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font: inherit; font-size: .88rem; font-weight: 800; cursor: pointer; }
+    .hub-tabs button.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 4px rgba(15, 23, 42, .12); }
+    .hub-group-title { margin: 18px 2px 8px; font-size: .9rem; }
+    .hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+    .hub-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface-2);
+    }
+    .hub-card.boosted { border-color: #f59e0b; box-shadow: 0 0 0 1px #f59e0b inset; }
+    .hub-card img { width: 52px; height: 52px; object-fit: contain; }
+    .hub-card-name { font-size: .86rem; font-weight: 800; line-height: 1.25; }
+    .hub-card-meta { margin-top: 3px; color: var(--muted); font-size: .72rem; font-weight: 650; line-height: 1.4; }
+    .hub-card .type-pills { margin-top: 4px; gap: 4px; }
+    .hub-card .type-pill { padding: 1px 7px; font-size: .64rem; }
+    .hub-flag { position: absolute; top: 6px; right: 8px; font-size: .8rem; }
+    .hub-boost-badge { display: inline-block; margin-top: 4px; color: #b45309; font-size: .68rem; font-weight: 850; }
+    .hub-small-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+    .hub-mini { position: relative; display: grid; justify-items: center; gap: 2px; padding: 8px 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); text-align: center; }
+    .hub-mini img { width: 48px; height: 48px; object-fit: contain; }
+    .hub-mini span { font-size: .72rem; font-weight: 750; line-height: 1.2; }
+    .hub-search { width: 100%; min-height: 42px; margin-bottom: 12px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); color: var(--text); font: inherit; }
+    .hub-task { padding: 12px; margin-bottom: 8px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-2); }
+    .hub-task-title { margin: 0 0 8px; font-size: .88rem; font-weight: 800; }
+    .hub-rewards { display: flex; gap: 8px; flex-wrap: wrap; }
+    .hub-reward { position: relative; display: grid; justify-items: center; width: 76px; gap: 2px; text-align: center; }
+    .hub-reward img { width: 44px; height: 44px; object-fit: contain; }
+    .hub-reward span { font-size: .68rem; font-weight: 700; line-height: 1.2; }
+    .hub-footer { margin-top: 16px; color: var(--muted); font-size: .72rem; }
+    .hub-loading { padding: 30px 10px; color: var(--muted); text-align: center; }
+
+    .subscribe-groups { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; margin: 14px 0; }
+    .subscribe-option { display: flex; align-items: center; gap: 9px; min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); font-size: .86rem; font-weight: 750; cursor: pointer; }
+    .subscribe-option input { width: 18px; height: 18px; accent-color: var(--brand); }
+    .subscribe-option .m-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--chip-color); }
+    .subscribe-url { display: flex; gap: 8px; margin-top: 6px; }
+    .subscribe-url input { flex: 1; min-width: 0; min-height: 42px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); color: var(--text); font: inherit; font-size: .78rem; }
+    .subscribe-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .subscribe-actions a, .subscribe-actions button {
+      display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 0 16px;
+      border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); color: var(--text);
+      font: inherit; font-size: .86rem; font-weight: 800; text-decoration: none; cursor: pointer;
+    }
+    .subscribe-actions .primary { border-color: var(--brand); background: var(--brand); color: white; }
+    .subscribe-hint { margin: 12px 0 0; color: var(--muted); font-size: .76rem; line-height: 1.5; }
+
+    @media (max-width: 820px) {
+      .upcoming { margin-bottom: 10px; }
+      .upcoming-track { margin: 0 -8px; padding: 0 8px 2px; }
+      .upcoming-item { min-width: 190px; box-shadow: none; }
+      .m-segment { grid-template-columns: repeat(3, 1fr); }
+      .hub-view { padding: 4px 12px 18px; }
+      .hub-grid { grid-template-columns: 1fr; }
+      #hub-view { display: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -1375,6 +1514,10 @@
         <div class="data-badge" id="data-badge"><span class="data-dot"></span><span id="data-status">Datenstand wird geladen …</span></div>
       </div>
       <a class="subscribe" href="__WEBCAL_URL__"><span class="subscribe-long">Kalender abonnieren</span><span class="subscribe-short">Abonnieren</span></a>
+    </section>
+
+    <section class="upcoming" id="upcoming" hidden aria-label="Demnächst">
+      <div class="upcoming-track" id="upcoming-track"></div>
     </section>
 
     <section class="featured-strip" id="featured-strip" hidden aria-labelledby="featured-title">
@@ -1397,9 +1540,11 @@
           <button class="control active" id="month-button">Monat</button>
           <button class="control" id="week-button">Woche</button>
           <button class="control" id="list-button">Liste</button>
+          <button class="control" id="hub-button">Aktuell</button>
         </div>
       </div>
 
+      <div class="chips-bar desktop-only" id="d-chips-bar"><div class="m-chips" id="d-chips" role="group" aria-label="Eventarten filtern"></div></div>
       <div class="legend" id="legend"></div>
       <div id="loading" class="loading">Events werden geladen …</div>
 
@@ -1440,11 +1585,13 @@
       </div>
 
       <div id="list-view" class="view list-view"></div>
+      <div id="hub-view" class="view hub-view"></div>
 
       <div class="m-toolbar mobile-only">
         <div class="m-segment" role="group" aria-label="Kalenderansicht">
           <button type="button" id="m-agenda-button" class="active">Agenda</button>
           <button type="button" id="m-month-button">Monat</button>
+          <button type="button" id="m-hub-button">Aktuell</button>
         </div>
         <div class="m-chips" id="m-chips" role="group" aria-label="Eventarten filtern"></div>
       </div>
@@ -1516,7 +1663,10 @@
       <div class="sheet-handle mobile-only" aria-hidden="true"></div>
       <div class="dialog-head">
         <h3 id="modal-title"></h3>
-        <button class="close" id="close" aria-label="Schließen">×</button>
+        <div class="dialog-actions">
+          <button class="star-button" id="favorite-button" type="button" aria-pressed="false" aria-label="Auf die Merkliste">☆</button>
+          <button class="close" id="close" aria-label="Schließen">×</button>
+        </div>
       </div>
       <div class="modal-pokemon" id="modal-pokemon" hidden></div>
       <div class="meta" id="modal-meta"></div>
@@ -1531,6 +1681,26 @@
         <p class="infographic-credit" id="infographic-credit"></p>
       </section>
       <a class="detail-link" id="modal-link" target="_blank" rel="noopener">Details bei LeekDuck</a>
+    </article>
+  </div>
+
+  <div class="modal" id="subscribe-modal" role="dialog" aria-modal="true" aria-labelledby="subscribe-title">
+    <article class="dialog" id="subscribe-dialog">
+      <div class="sheet-handle mobile-only" aria-hidden="true"></div>
+      <div class="dialog-head">
+        <h3 id="subscribe-title">Kalender abonnieren</h3>
+        <button class="close" id="subscribe-close" aria-label="Schließen">×</button>
+      </div>
+      <p class="subscribe-hint" style="margin-top:4px">Wähle, welche Eventarten in deinem Kalender erscheinen sollen. Das Abo aktualisiert sich automatisch.</p>
+      <div class="subscribe-groups" id="subscribe-groups"></div>
+      <div class="subscribe-url">
+        <input id="subscribe-url" type="text" readonly aria-label="Abo-Adresse">
+      </div>
+      <div class="subscribe-actions">
+        <a class="primary" id="subscribe-open" href="#">Im Kalender öffnen</a>
+        <button type="button" id="subscribe-copy">Adresse kopieren</button>
+      </div>
+      <p class="subscribe-hint">iPhone/Mac: „Im Kalender öffnen“ antippen. Google Kalender: Adresse kopieren und unter „Weitere Kalender → Per URL“ einfügen.</p>
     </article>
   </div>
 
@@ -1712,7 +1882,7 @@
     function monthSegments(weekStart) {
       const weekEnd = addDays(weekStart, 7);
       const segments = [];
-      for (const event of state.events) {
+      for (const event of shownEvents()) {
         if (!overlaps(event, weekStart, weekEnd)) continue;
         const actualStartDay = startOfDay(eventStart(event));
         const actualEndDay = startOfDay(effectiveEnd(event));
@@ -1779,7 +1949,7 @@
     function createColoredButton(className, event, text) {
       const button = document.createElement("button");
       button.className = className;
-      appendEventContent(button, event, text, 1);
+      appendEventContent(button, event, `${favoritePrefix(event)}${text}`, 1);
       applyEventColors(button, event.eventType);
       button.title = event.title;
       button.addEventListener("click", () => openEvent(event));
@@ -1826,6 +1996,10 @@
 
     function updateTitle() {
       const title = document.getElementById("period-title");
+      if (state.view === "hub") {
+        title.textContent = "Aktuelle Infos";
+        return;
+      }
       if (state.view === "week") {
         const start = startOfWeek(state.cursor);
         const end = addDays(start, 6);
@@ -1887,7 +2061,7 @@
     function weekAllDaySegments(weekStart) {
       const weekEnd = addDays(weekStart, 7);
       const segments = [];
-      for (const event of state.events.filter(isAllDayLike)) {
+      for (const event of shownEvents().filter(isAllDayLike)) {
         if (!overlaps(event, weekStart, weekEnd)) continue;
         const actualStart = startOfDay(eventStart(event));
         const actualEnd = startOfDay(effectiveEnd(event));
@@ -1911,7 +2085,7 @@
     function timedSegmentsForDay(day) {
       const nextDay = addDays(day, 1);
       const segments = [];
-      for (const event of state.events) {
+      for (const event of shownEvents()) {
         if (isAllDayLike(event) || !overlaps(event, day, nextDay)) continue;
         const start = eventStart(event) < day ? day : eventStart(event);
         const end = eventEnd(event) > nextDay ? nextDay : eventEnd(event);
@@ -2077,7 +2251,7 @@
       list.replaceChildren();
       const monthStart = new Date(state.cursor.getFullYear(), state.cursor.getMonth(), 1);
       const monthEnd = new Date(state.cursor.getFullYear(), state.cursor.getMonth() + 1, 1);
-      const events = state.events
+      const events = shownEvents()
         .filter(event => overlaps(event, monthStart, monthEnd))
         .sort((a, b) => eventStart(a) - eventStart(b));
 
@@ -2122,7 +2296,7 @@
 
           const eventTitle = document.createElement("span");
           eventTitle.className = "list-title";
-          eventTitle.textContent = event.title;
+          eventTitle.textContent = `${favoritePrefix(event)}${event.title}`;
 
           const category = document.createElement("span");
           category.className = "list-category";
@@ -2158,6 +2332,8 @@
       const start = eventStart(event);
       const end = eventEnd(event);
       document.getElementById("modal-title").textContent = event.title;
+      state.openEvent = event;
+      updateFavoriteButton();
       const gallery = document.getElementById("modal-pokemon");
       gallery.replaceChildren();
       const images = pokemonImages(event);
@@ -2456,51 +2632,106 @@
       return group ? group.id : "events";
     }
 
+    function eventGroupId(event) {
+      return event.group || (event.isManual ? "local" : groupForType(event.eventType));
+    }
+
+    function groupDefs() {
+      return Array.isArray(state.meta.groups) && state.meta.groups.length ? state.meta.groups : typeGroups;
+    }
+
+    // ---------- Merkliste ----------
+    const favorites = new Set();
+    try { JSON.parse(localStorage.getItem("pogo-favorites") || "[]").forEach(id => favorites.add(String(id))); } catch (_) {}
+
+    function favoritePrefix(event) {
+      return favorites.has(String(event.id)) ? "★ " : "";
+    }
+
+    function shownEvents() {
+      let list = state.events;
+      if (mobile.filters.size) list = list.filter(event => mobile.filters.has(eventGroupId(event)));
+      if (mobile.favoritesOnly) list = list.filter(event => favorites.has(String(event.id)));
+      return list;
+    }
+
+    function saveFavorites() {
+      try { localStorage.setItem("pogo-favorites", JSON.stringify([...favorites])); } catch (_) {}
+    }
+
+    function updateFavoriteButton() {
+      const button = document.getElementById("favorite-button");
+      const active = Boolean(state.openEvent && favorites.has(String(state.openEvent.id)));
+      button.setAttribute("aria-pressed", String(active));
+      button.textContent = active ? "★" : "☆";
+      button.setAttribute("aria-label", active ? "Von der Merkliste entfernen" : "Auf die Merkliste");
+    }
+
+    function toggleFavorite() {
+      if (!state.openEvent) return;
+      const id = String(state.openEvent.id);
+      if (favorites.has(id)) favorites.delete(id); else favorites.add(id);
+      saveFavorites();
+      updateFavoriteButton();
+      renderChips();
+      renderCurrentView();
+      renderUpcoming();
+    }
+
     function mobileEvents() {
-      if (!mobile.filters.size) return state.events;
-      return state.events.filter(event => mobile.filters.has(groupForType(event.eventType)));
+      return shownEvents();
     }
 
     function saveMobileState() {
       try {
         localStorage.setItem("pogo-mobile-view", mobile.view);
         localStorage.setItem("pogo-mobile-filters", JSON.stringify([...mobile.filters]));
+        localStorage.setItem("pogo-favorites-only", mobile.favoritesOnly ? "1" : "0");
       } catch (_) {}
     }
 
     function renderChips() {
-      const container = document.getElementById("m-chips");
-      container.replaceChildren();
-      const present = new Set(state.events.map(event => groupForType(event.eventType)));
+      const present = new Set(state.events.map(eventGroupId));
       for (const id of [...mobile.filters]) if (!present.has(id)) mobile.filters.delete(id);
-      const makeChip = (label, active, color, onClick) => {
-        const chip = document.createElement("button");
-        chip.type = "button";
-        chip.className = `m-chip${active ? " active" : ""}`;
-        chip.setAttribute("aria-pressed", String(active));
-        if (color) {
-          const dot = document.createElement("span");
-          dot.className = "m-dot";
-          chip.style.setProperty("--chip-color", color);
-          chip.appendChild(dot);
-        }
-        chip.appendChild(document.createTextNode(label));
-        chip.addEventListener("click", onClick);
-        return chip;
-      };
-      container.appendChild(makeChip("Alle", !mobile.filters.size, null, () => {
-        mobile.filters.clear();
-        saveMobileState();
-        renderChips();
-        renderMobile();
-      }));
-      for (const group of typeGroups.filter(item => present.has(item.id))) {
-        container.appendChild(makeChip(group.label, mobile.filters.has(group.id), group.color, () => {
-          if (mobile.filters.has(group.id)) mobile.filters.delete(group.id); else mobile.filters.add(group.id);
-          saveMobileState();
-          renderChips();
-          renderMobile();
+      for (const containerId of ["m-chips", "d-chips"]) {
+        const container = document.getElementById(containerId);
+        container.replaceChildren();
+        const makeChip = (label, active, color, onClick, extraClass = "") => {
+          const chip = document.createElement("button");
+          chip.type = "button";
+          chip.className = `m-chip${active ? " active" : ""}${extraClass ? ` ${extraClass}` : ""}`;
+          chip.setAttribute("aria-pressed", String(active));
+          if (color) {
+            const dot = document.createElement("span");
+            dot.className = "m-dot";
+            chip.style.setProperty("--chip-color", color);
+            chip.appendChild(dot);
+          }
+          chip.appendChild(document.createTextNode(label));
+          chip.addEventListener("click", onClick);
+          return chip;
+        };
+        const changed = () => { saveMobileState(); renderChips(); renderCurrentView(); };
+        container.appendChild(makeChip("Alle", !mobile.filters.size && !mobile.favoritesOnly, null, () => {
+          mobile.filters.clear();
+          mobile.favoritesOnly = false;
+          changed();
         }));
+        const favChip = makeChip(`Merkliste${favorites.size ? ` (${favorites.size})` : ""}`, mobile.favoritesOnly, null, () => {
+          mobile.favoritesOnly = !mobile.favoritesOnly;
+          changed();
+        }, "fav-chip");
+        const star = document.createElement("span");
+        star.className = "m-star";
+        star.textContent = "★";
+        favChip.prepend(star);
+        container.appendChild(favChip);
+        for (const group of groupDefs().filter(item => present.has(item.id))) {
+          container.appendChild(makeChip(group.label, mobile.filters.has(group.id), group.color, () => {
+            if (mobile.filters.has(group.id)) mobile.filters.delete(group.id); else mobile.filters.add(group.id);
+            changed();
+          }));
+        }
       }
     }
 
@@ -2556,7 +2787,7 @@
       text.className = "m-text";
       const title = document.createElement("span");
       title.className = "m-title";
-      title.textContent = event.title;
+      title.textContent = `${favoritePrefix(event)}${event.title}`;
       const sub = document.createElement("span");
       sub.className = "m-sub";
       if (eventStart(event) <= now && eventEnd(event) > now && !day) {
@@ -2669,7 +2900,9 @@
       if (!running.length && !visible.length && !past.length) {
         const empty = document.createElement("div");
         empty.className = "m-empty";
-        empty.textContent = mobile.filters.size ? "Für diese Auswahl gibt es keine kommenden Events." : "Keine kommenden Events eingetragen.";
+        empty.textContent = mobile.favoritesOnly
+          ? "Deine Merkliste ist leer. Öffne ein Event und tippe auf den Stern."
+          : (mobile.filters.size ? "Für diese Auswahl gibt es keine kommenden Events." : "Keine kommenden Events eingetragen.");
         container.appendChild(empty);
       }
     }
@@ -2806,7 +3039,11 @@
       container.replaceChildren();
       document.getElementById("m-agenda-button").classList.toggle("active", mobile.view === "agenda");
       document.getElementById("m-month-button").classList.toggle("active", mobile.view === "month");
-      if (mobile.view === "month") renderMobileMonth(container); else renderAgenda(container);
+      document.getElementById("m-hub-button").classList.toggle("active", mobile.view === "hub");
+      document.getElementById("m-chips").hidden = mobile.view === "hub";
+      if (mobile.view === "month") renderMobileMonth(container);
+      else if (mobile.view === "hub") renderHub(container);
+      else renderAgenda(container);
     }
 
     function setMobileView(view) {
@@ -2846,6 +3083,391 @@
       });
     })();
 
+
+    // ---------- Demnächst (Countdown) ----------
+    const highlightGroups = new Set(["community", "spotlight", "raids", "dyna", "big", "local"]);
+    const formatClock = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit" });
+    const formatWeekdayDate = new Intl.DateTimeFormat("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+
+    function durationText(ms, dative = false) {
+      const minutes = Math.max(1, Math.round(ms / 60000));
+      if (minutes < 60) return `${minutes} Min`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return minutes % 60 ? `${hours} Std ${minutes % 60} Min` : `${hours} Std`;
+      const days = Math.round(hours / 24);
+      if (days === 1) return dative ? "1 Tag" : "1 Tag";
+      return dative ? `${days} Tagen` : `${days} Tage`;
+    }
+
+    function upcomingItems(now) {
+      const horizon = now.getTime() + 7 * 86400000;
+      const favoriteHorizon = now.getTime() + 21 * 86400000;
+      const candidates = state.events.filter(event => {
+        const start = eventStart(event).getTime();
+        const end = eventEnd(event).getTime();
+        if (end <= now.getTime()) return false;
+        if (favorites.has(String(event.id))) return start < favoriteHorizon || start <= now.getTime();
+        const short = end - start <= 12 * 3600000 && !isAllDayLike(event);
+        return short && highlightGroups.has(eventGroupId(event)) && start < horizon;
+      });
+      candidates.sort((a, b) => {
+        const liveA = eventStart(a) <= now ? 0 : 1;
+        const liveB = eventStart(b) <= now ? 0 : 1;
+        return liveA - liveB || eventStart(a) - eventStart(b);
+      });
+      return candidates.slice(0, 5);
+    }
+
+    function renderUpcoming() {
+      if (!state.events.length) return;
+      const now = new Date();
+      const items = upcomingItems(now);
+      const section = document.getElementById("upcoming");
+      const track = document.getElementById("upcoming-track");
+      track.replaceChildren();
+      section.hidden = !items.length;
+      const today = startOfDay(now);
+      for (const event of items) {
+        const start = eventStart(event);
+        const end = eventEnd(event);
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "upcoming-item";
+        applyEventColors(button, event.eventType);
+        const when = document.createElement("span");
+        when.className = "upcoming-when";
+        const count = document.createElement("span");
+        count.className = "upcoming-count";
+        if (start <= now) {
+          when.classList.add("live");
+          when.textContent = "Läuft gerade";
+          count.textContent = `noch ${durationText(end - now)}`;
+        } else {
+          const offset = dayDiff(today, startOfDay(start));
+          const time = isAllDayLike(event) ? "" : ` ${formatClock.format(start)}`;
+          when.textContent = offset === 0 ? `Heute${time}` : (offset === 1 ? `Morgen${time}` : `${formatWeekdayDate.format(start)}${time}`);
+          count.textContent = `in ${durationText(start - now, true)}`;
+        }
+        const title = document.createElement("span");
+        title.className = "upcoming-title";
+        title.textContent = `${favoritePrefix(event)}${event.title}`;
+        button.append(when, title, count);
+        button.addEventListener("click", () => openEvent(event));
+        track.appendChild(button);
+      }
+    }
+
+    // ---------- Jetzt aktuell: Wetter, Raids, Eier, Feldforschung ----------
+    const typeColors = {
+      normal: "#9ca3af", fire: "#f97316", water: "#3b82f6", grass: "#22c55e", electric: "#eab308", ice: "#22d3ee",
+      fighting: "#b91c1c", poison: "#a855f7", ground: "#a16207", flying: "#818cf8", psychic: "#ec4899", bug: "#84cc16",
+      rock: "#78716c", ghost: "#6d28d9", dragon: "#4f46e5", dark: "#374151", steel: "#64748b", fairy: "#f472b6"
+    };
+    const hub = { data: null, loading: false, error: null, tab: "raids", query: "" };
+    try { hub.tab = localStorage.getItem("pogo-hub-tab") || "raids"; } catch (_) {}
+
+    function typePills(types) {
+      const wrap = document.createElement("div");
+      wrap.className = "type-pills";
+      for (const type of types || []) {
+        const pill = document.createElement("span");
+        pill.className = "type-pill";
+        pill.style.setProperty("--type-color", typeColors[type.key] || "#64748b");
+        pill.textContent = type.label;
+        wrap.appendChild(pill);
+      }
+      return wrap;
+    }
+
+    function hubImage(src, alt) {
+      const img = document.createElement("img");
+      if (src) img.src = src;
+      img.alt = alt || "";
+      img.loading = "lazy";
+      img.decoding = "async";
+      img.addEventListener("error", () => { img.style.visibility = "hidden"; });
+      return img;
+    }
+
+    function cpText(cp) {
+      if (!cp || cp.min == null) return "";
+      return cp.min === cp.max ? `${cp.min} WP` : `${cp.min}–${cp.max} WP`;
+    }
+
+    async function loadHub(force = false) {
+      if (hub.loading || (hub.data && !force)) return;
+      hub.loading = true;
+      hub.error = null;
+      try {
+        const response = await fetch("/api/hub", { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        hub.data = await response.json();
+      } catch (error) {
+        hub.error = error.message;
+      } finally {
+        hub.loading = false;
+        renderCurrentView();
+      }
+    }
+
+    function renderWeatherCard(container, weather) {
+      if (!weather || !weather.current) return;
+      const card = document.createElement("section");
+      card.className = "hub-weather";
+      const head = document.createElement("div");
+      head.className = "hub-weather-head";
+      const title = document.createElement("h3");
+      title.textContent = `Wetter in ${weather.location || "der Stadt"}: ${weather.current.label}`;
+      const info = document.createElement("span");
+      info.textContent = weather.temperature != null ? `${Math.round(weather.temperature)} °C` : "";
+      head.append(title, info);
+      const boostLabel = document.createElement("div");
+      boostLabel.className = "hub-card-meta";
+      boostLabel.textContent = "Verstärkte Typen:";
+      card.append(head, boostLabel, typePills(weather.current.boosted));
+      if (Array.isArray(weather.forecast) && weather.forecast.length) {
+        const forecast = document.createElement("div");
+        forecast.className = "hub-forecast";
+        for (const hour of weather.forecast) {
+          const cell = document.createElement("div");
+          cell.className = "hub-hour";
+          const time = document.createElement("strong");
+          time.textContent = String(hour.time || "").slice(11, 16);
+          cell.append(time, document.createTextNode(hour.label));
+          forecast.appendChild(cell);
+        }
+        card.appendChild(forecast);
+      }
+      const note = document.createElement("p");
+      note.className = "hub-note";
+      note.textContent = `Näherung aus den Wetterdaten von ${weather.source || "Open-Meteo"}. Das Spiel nutzt eigene Wetterdaten, kleine Abweichungen sind möglich.${weather.stale ? " Zuletzt bekannter Stand." : ""}`;
+      card.appendChild(note);
+      container.appendChild(card);
+    }
+
+    function renderRaids(container, data) {
+      if (!data.raids || !data.raids.length) {
+        container.appendChild(Object.assign(document.createElement("div"), { className: "m-empty", textContent: "Keine Raid-Daten verfügbar." }));
+        return;
+      }
+      for (const tier of data.raids) {
+        const heading = document.createElement("h3");
+        heading.className = "hub-group-title";
+        heading.textContent = tier.tier;
+        const grid = document.createElement("div");
+        grid.className = "hub-grid";
+        for (const boss of tier.bosses) {
+          const card = document.createElement("div");
+          card.className = `hub-card${boss.boostedNow ? " boosted" : ""}`;
+          const text = document.createElement("div");
+          const name = document.createElement("div");
+          name.className = "hub-card-name";
+          name.textContent = boss.name;
+          const meta = document.createElement("div");
+          meta.className = "hub-card-meta";
+          const boosted = boss.cpBoosted ? ` · Boost ${cpText(boss.cpBoosted)}` : "";
+          meta.textContent = `${cpText(boss.cp)}${boosted}`;
+          text.append(name, typePills(boss.types), meta);
+          if (boss.weather && boss.weather.length) {
+            const weatherLine = document.createElement("div");
+            weatherLine.className = "hub-card-meta";
+            weatherLine.textContent = `Wetter: ${boss.weather.map(item => item.label).join(", ")}`;
+            text.appendChild(weatherLine);
+          }
+          if (boss.boostedNow) {
+            const badge = document.createElement("span");
+            badge.className = "hub-boost-badge";
+            badge.textContent = "Wetterboost gerade aktiv";
+            text.appendChild(badge);
+          }
+          card.append(hubImage(boss.image, boss.name), text);
+          if (boss.shiny) card.appendChild(Object.assign(document.createElement("span"), { className: "hub-flag", textContent: "✨", title: "Kann Shiny sein" }));
+          grid.appendChild(card);
+        }
+        container.append(heading, grid);
+      }
+    }
+
+    function renderEggs(container, data) {
+      if (!data.eggs || !data.eggs.length) {
+        container.appendChild(Object.assign(document.createElement("div"), { className: "m-empty", textContent: "Keine Ei-Daten verfügbar." }));
+        return;
+      }
+      for (const group of data.eggs) {
+        const heading = document.createElement("h3");
+        heading.className = "hub-group-title";
+        heading.textContent = group.label;
+        const grid = document.createElement("div");
+        grid.className = "hub-small-grid";
+        for (const pokemon of group.pokemon) {
+          const tile = document.createElement("div");
+          tile.className = "hub-mini";
+          const flags = `${pokemon.shiny ? "✨" : ""}${pokemon.regional ? "🌍" : ""}`;
+          tile.append(hubImage(pokemon.image, pokemon.name), Object.assign(document.createElement("span"), { textContent: pokemon.name }));
+          if (flags) tile.appendChild(Object.assign(document.createElement("span"), { className: "hub-flag", textContent: flags }));
+          grid.appendChild(tile);
+        }
+        container.append(heading, grid);
+      }
+      container.appendChild(Object.assign(document.createElement("p"), { className: "hub-note", textContent: "✨ kann Shiny sein · 🌍 regional begrenzt" }));
+    }
+
+    function renderResearch(container, data) {
+      const search = document.createElement("input");
+      search.className = "hub-search";
+      search.type = "search";
+      search.placeholder = "Aufgabe oder Pokémon suchen, z. B. Dratini";
+      search.value = hub.query;
+      const list = document.createElement("div");
+      const draw = () => {
+        list.replaceChildren();
+        const query = hub.query.trim().toLocaleLowerCase("de-DE");
+        const tasks = (data.research || []).filter(task => !query
+          || task.task.toLocaleLowerCase("de-DE").includes(query)
+          || task.taskOriginal.toLocaleLowerCase("de-DE").includes(query)
+          || task.rewards.some(reward => reward.name.toLocaleLowerCase("de-DE").includes(query) || reward.originalName.toLocaleLowerCase("de-DE").includes(query)));
+        if (!tasks.length) {
+          list.appendChild(Object.assign(document.createElement("div"), { className: "m-empty", textContent: query ? "Keine passende Aufgabe gefunden." : "Keine Forschungsdaten verfügbar." }));
+          return;
+        }
+        for (const task of tasks) {
+          const item = document.createElement("div");
+          item.className = "hub-task";
+          const title = document.createElement("p");
+          title.className = "hub-task-title";
+          title.textContent = task.task;
+          if (task.task !== task.taskOriginal) title.title = task.taskOriginal;
+          const rewards = document.createElement("div");
+          rewards.className = "hub-rewards";
+          for (const reward of task.rewards) {
+            const tile = document.createElement("div");
+            tile.className = "hub-reward";
+            tile.append(hubImage(reward.image, reward.name), Object.assign(document.createElement("span"), { textContent: `${reward.name}${reward.shiny ? " ✨" : ""}` }));
+            rewards.appendChild(tile);
+          }
+          item.append(title, rewards);
+          list.appendChild(item);
+        }
+      };
+      search.addEventListener("input", () => { hub.query = search.value; draw(); });
+      container.append(search, list);
+      draw();
+    }
+
+    function renderHub(container) {
+      container.replaceChildren();
+      if (!hub.data) {
+        container.appendChild(Object.assign(document.createElement("div"), {
+          className: "hub-loading",
+          textContent: hub.error ? `Daten konnten nicht geladen werden (${hub.error}).` : "Aktuelle Daten werden geladen …"
+        }));
+        if (!hub.loading && !hub.error) loadHub();
+        return;
+      }
+      const data = hub.data;
+      if (data.enabled === false) {
+        container.appendChild(Object.assign(document.createElement("div"), { className: "m-empty", textContent: "Dieser Bereich ist deaktiviert." }));
+        return;
+      }
+      renderWeatherCard(container, data.weather);
+      const tabs = document.createElement("div");
+      tabs.className = "hub-tabs";
+      tabs.setAttribute("role", "group");
+      [["raids", "Raids"], ["eggs", "Eier"], ["research", "Forschung"]].forEach(([id, label]) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.className = hub.tab === id ? "active" : "";
+        button.addEventListener("click", () => {
+          hub.tab = id;
+          try { localStorage.setItem("pogo-hub-tab", id); } catch (_) {}
+          renderHub(container);
+        });
+        tabs.appendChild(button);
+      });
+      container.appendChild(tabs);
+      const body = document.createElement("div");
+      if (hub.tab === "eggs") renderEggs(body, data);
+      else if (hub.tab === "research") renderResearch(body, data);
+      else renderRaids(body, data);
+      container.appendChild(body);
+      const footer = document.createElement("p");
+      footer.className = "hub-footer";
+      const fetched = Object.values(data.fetchedAt || {}).sort().pop();
+      footer.textContent = `Daten: ${data.source || "LeekDuck.com via ScrapedDuck"}${fetched ? ` · Stand ${formatDateTime.format(new Date(fetched))}` : ""}${Object.keys(data.errors || {}).length ? " · teilweise zuletzt bekannter Stand" : ""}`;
+      container.appendChild(footer);
+    }
+
+    // ---------- Gefiltertes Abo ----------
+    const subscribeState = { selected: null };
+
+    function subscribeBase() {
+      return document.querySelector(".subscribe").getAttribute("href") || "";
+    }
+
+    function subscribeUrl() {
+      const groups = groupDefs().map(group => group.id);
+      const selected = groups.filter(id => subscribeState.selected.has(id));
+      const base = subscribeBase();
+      if (!selected.length || selected.length === groups.length) return base;
+      return `${base}${base.includes("?") ? "&" : "?"}groups=${selected.join(",")}`;
+    }
+
+    function updateSubscribe() {
+      const url = subscribeUrl();
+      document.getElementById("subscribe-url").value = url.replace(/^webcal:/, "https:");
+      document.getElementById("subscribe-open").href = url;
+      const none = !subscribeState.selected.size;
+      document.getElementById("subscribe-open").style.pointerEvents = none ? "none" : "";
+      document.getElementById("subscribe-open").style.opacity = none ? ".5" : "";
+    }
+
+    function openSubscribe() {
+      if (!subscribeState.selected) {
+        let saved = null;
+        try { saved = JSON.parse(localStorage.getItem("pogo-subscribe-groups") || "null"); } catch (_) {}
+        subscribeState.selected = new Set(Array.isArray(saved) ? saved : groupDefs().map(group => group.id));
+      }
+      const container = document.getElementById("subscribe-groups");
+      container.replaceChildren();
+      for (const group of groupDefs()) {
+        const label = document.createElement("label");
+        label.className = "subscribe-option";
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.checked = subscribeState.selected.has(group.id);
+        input.addEventListener("change", () => {
+          if (input.checked) subscribeState.selected.add(group.id); else subscribeState.selected.delete(group.id);
+          try { localStorage.setItem("pogo-subscribe-groups", JSON.stringify([...subscribeState.selected])); } catch (_) {}
+          updateSubscribe();
+        });
+        const dot = document.createElement("span");
+        dot.className = "m-dot";
+        label.style.setProperty("--chip-color", group.color);
+        label.append(input, dot, document.createTextNode(group.label));
+        container.appendChild(label);
+      }
+      updateSubscribe();
+      document.getElementById("subscribe-modal").classList.add("open");
+    }
+
+    function closeSubscribe() {
+      document.getElementById("subscribe-modal").classList.remove("open");
+    }
+
+    async function copySubscribeUrl() {
+      const input = document.getElementById("subscribe-url");
+      const button = document.getElementById("subscribe-copy");
+      try {
+        await navigator.clipboard.writeText(input.value);
+      } catch (_) {
+        input.select();
+        document.execCommand("copy");
+      }
+      button.textContent = "Kopiert";
+      setTimeout(() => { button.textContent = "Adresse kopieren"; }, 1800);
+    }
+
     function renderCurrentView() {
       if (isMobile()) {
         renderMobile();
@@ -2857,9 +3479,13 @@
       document.getElementById("month-button").classList.toggle("active", state.view === "month");
       document.getElementById("week-button").classList.toggle("active", state.view === "week");
       document.getElementById("list-button").classList.toggle("active", state.view === "list");
+      document.getElementById("hub-button").classList.toggle("active", state.view === "hub");
+      document.getElementById("d-chips-bar").hidden = state.view === "hub";
+      document.querySelector(".toolbar .toolbar-group").style.visibility = state.view === "hub" ? "hidden" : "";
       if (state.view === "month") renderMonth();
       if (state.view === "week") renderWeek();
       if (state.view === "list") renderList();
+      if (state.view === "hub") renderHub(document.getElementById("hub-view"));
     }
 
     function setView(view) {
@@ -2886,6 +3512,14 @@
     document.getElementById("month-button").addEventListener("click", () => setView("month"));
     document.getElementById("week-button").addEventListener("click", () => setView("week"));
     document.getElementById("list-button").addEventListener("click", () => setView("list"));
+    document.getElementById("hub-button").addEventListener("click", () => setView("hub"));
+    document.getElementById("m-hub-button").addEventListener("click", () => setMobileView("hub"));
+    document.getElementById("favorite-button").addEventListener("click", toggleFavorite);
+    document.querySelector(".subscribe").addEventListener("click", event => { event.preventDefault(); openSubscribe(); });
+    document.getElementById("subscribe-close").addEventListener("click", closeSubscribe);
+    document.getElementById("subscribe-modal").addEventListener("click", event => { if (event.target.id === "subscribe-modal") closeSubscribe(); });
+    document.getElementById("subscribe-copy").addEventListener("click", copySubscribeUrl);
+    setInterval(renderUpcoming, 30000);
     document.getElementById("m-agenda-button").addEventListener("click", () => setMobileView("agenda"));
     document.getElementById("m-month-button").addEventListener("click", () => setMobileView("month"));
     document.getElementById("links-toggle").addEventListener("click", event => {
@@ -2900,7 +3534,7 @@
       if (event.target.id === "modal") closeModal();
     });
     document.addEventListener("keydown", event => {
-      if (event.key === "Escape" && !closeLightbox()) closeModal();
+      if (event.key === "Escape" && !closeLightbox()) { closeModal(); closeSubscribe(); }
     });
     document.getElementById("lightbox").addEventListener("click", closeLightbox);
     document.getElementById("infographic-prev").addEventListener("click", () => scrollInfographics(-1));
@@ -2911,9 +3545,10 @@
 
     try {
       const savedView = localStorage.getItem("pogo-calendar-view");
-      if (["month", "week", "list"].includes(savedView)) state.view = savedView;
+      if (["month", "week", "list", "hub"].includes(savedView)) state.view = savedView;
       const savedMobileView = localStorage.getItem("pogo-mobile-view");
-      if (["agenda", "month"].includes(savedMobileView)) mobile.view = savedMobileView;
+      if (["agenda", "month", "hub"].includes(savedMobileView)) mobile.view = savedMobileView;
+      mobile.favoritesOnly = localStorage.getItem("pogo-favorites-only") === "1";
       const savedFilters = JSON.parse(localStorage.getItem("pogo-mobile-filters") || "[]");
       if (Array.isArray(savedFilters)) savedFilters.forEach(id => typeGroups.some(group => group.id === id) && mobile.filters.add(id));
     } catch (_) {}
@@ -2928,8 +3563,11 @@
         state.meta = Array.isArray(payload) ? {} : (payload.meta || {});
         document.getElementById("loading").style.display = "none";
         renderLegend();
+        for (const id of [...favorites]) if (!state.events.some(item => String(item.id) === id)) favorites.delete(id);
+        saveFavorites();
         renderChips();
         renderFeatured();
+        renderUpcoming();
         renderDataStatus();
         renderCurrentView();
       })

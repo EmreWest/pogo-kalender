@@ -22,9 +22,10 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+import hub
 import infographic_store
 from infographic_manager import InfographicManager
 
@@ -66,6 +67,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "use_scrapedduck_images": True,
     },
     "infographics": infographic_store.DEFAULT_SETTINGS,
+    "hub": hub.DEFAULT_HUB_CONFIG,
     "filters": {
         "include_types": [],
         "exclude_types": ["go-battle-league", "season", "update"],
@@ -96,7 +98,7 @@ STATIC_ASSETS = {
     "/icon-512.png": (Path("/app/icon-512.png"), "image/png"),
     "/site.webmanifest": (Path("/app/site.webmanifest"), "application/manifest+json; charset=utf-8"),
 }
-SERVICE_VERSION = "1.7.0"
+SERVICE_VERSION = "1.8.0"
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 
 logging.basicConfig(
@@ -196,6 +198,47 @@ DEFAULT_PHRASE_TRANSLATIONS: dict[str, str] = {
     ", and ": " und ",
     " and ": " und ",
 }
+
+# Groups for the filter chips and the filtered iCal subscription. Manually
+# created events always belong to "local".
+TYPE_GROUPS: list[dict[str, Any]] = [
+    {"id": "raids", "label": "Raids", "color": "#6d28d9",
+     "types": ["raid-battles", "raid-hour", "raid-day", "raid-weekend", "elite-raids"]},
+    {"id": "dyna", "label": "Dyna", "color": "#db2777", "types": ["max-battles", "max-mondays"]},
+    {"id": "spotlight", "label": "Rampenlicht", "color": "#facc15", "types": ["pokemon-spotlight-hour"]},
+    {"id": "community", "label": "Community Day", "color": "#f97316", "types": ["community-day"]},
+    {"id": "big", "label": "Große Events", "color": "#0891b2",
+     "types": ["pokemon-go-fest", "pokemon-go-tour", "wild-area", "safari-zone", "city-safari", "global-challenge"]},
+    {"id": "research", "label": "Forschung", "color": "#10b981",
+     "types": ["research", "timed-research", "limited-research", "research-breakthrough", "special-research", "research-day"]},
+    {"id": "rocket", "label": "Rocket", "color": "#7f1d1d",
+     "types": ["go-rocket-takeover", "team-go-rocket", "giovanni-special-research"]},
+    {"id": "events", "label": "Events", "color": "#0ea5a8", "types": []},
+    {"id": "local", "label": "Treffen vor Ort", "color": "#16a34a", "types": []},
+]
+GROUP_IDS = [group["id"] for group in TYPE_GROUPS]
+
+
+def event_group(event_type: str, is_manual: bool = False) -> str:
+    if is_manual:
+        return "local"
+    normalized = str(event_type or "").casefold()
+    for group in TYPE_GROUPS:
+        if normalized in group["types"]:
+            return group["id"]
+    return "events"
+
+
+def parse_groups(value: str | None) -> set[str] | None:
+    """Parse ?groups=raids,community. None means "all groups"."""
+    if not value:
+        return None
+    groups = {part.strip().casefold() for part in value.split(",") if part.strip()}
+    groups &= set(GROUP_IDS)
+    if not groups or groups == set(GROUP_IDS):
+        return None
+    return groups
+
 
 EVENT_TYPE_LABELS: dict[str, str] = {
     "community-day": "Community Day",
@@ -1265,18 +1308,26 @@ def create_calendar(
     events: list[dict[str, Any]],
     manual_events: list[dict[str, Any]],
     config: dict[str, Any],
+    groups: set[str] | None = None,
 ) -> tuple[bytes, int, list[dict[str, Any]], int]:
     local_tz = ZoneInfo(str(config["timezone"]))
     now_utc = datetime.now(timezone.utc)
     now_local = now_utc.astimezone(local_tz)
 
     selected = [event for event in events if event_matches(event, config, now_local)]
+    if groups is not None:
+        selected = [event for event in selected if event_group(str(event.get("eventType") or "event")) in groups]
     selected.sort(key=lambda event: str(event.get("start") or ""))
     selected_manual = [event for event in manual_events if manual_event_in_window(event, config, now_local)]
+    if groups is not None and "local" not in groups:
+        selected_manual = []
     selected_manual.sort(key=lambda event: str(event.get("start") or ""))
     pokemon_mapping, pokemon_pattern = get_pokemon_translator(config)
 
     calendar_name = str(config.get("calendar_name") or DEFAULT_CONFIG["calendar_name"])
+    if groups is not None:
+        labels = [group["label"] for group in TYPE_GROUPS if group["id"] in groups]
+        calendar_name = f"{calendar_name} ({', '.join(labels)})"
     description = str(config.get("calendar_description") or DEFAULT_CONFIG["calendar_description"])
 
     lines = [
@@ -1337,6 +1388,7 @@ def create_calendar(
             "heading": heading,
             "category": category,
             "eventType": event_type,
+            "group": event_group(event_type),
             "pokemonImages": pokemon_images,
             "allDay": False,
             "isManual": False,
@@ -1400,6 +1452,7 @@ def create_calendar(
             "heading": "Manuell hinzugefügt",
             "category": category,
             "eventType": event_type,
+            "group": "local",
             "pokemonImages": pokemon_images,
             "allDay": all_day,
             "isManual": True,
@@ -1550,6 +1603,38 @@ def build_health_payload(config: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+FILTERED_CALENDARS: dict[str, tuple[str, bytes, str]] = {}
+FILTERED_LOCK = threading.Lock()
+HUB = hub.HubService()
+
+
+def filtered_calendar(groups: set[str], base_etag: str, config: dict[str, Any]) -> tuple[bytes, str]:
+    """iCal feed limited to some groups, rebuilt whenever the main feed changes."""
+    key = ",".join(sorted(groups))
+    with FILTERED_LOCK:
+        cached = FILTERED_CALENDARS.get(key)
+        if cached and cached[0] == base_etag:
+            return cached[1], cached[2]
+    with CACHE_LOCK:
+        source = list(CACHE.get("source_events") or [])
+    body, _count, _web, _manual = create_calendar(source, load_manual_events(config), config, groups)
+    etag = '"' + hashlib.sha256(body).hexdigest() + '"'
+    with FILTERED_LOCK:
+        FILTERED_CALENDARS[key] = (base_etag, body, etag)
+        if len(FILTERED_CALENDARS) > 128:
+            FILTERED_CALENDARS.pop(next(iter(FILTERED_CALENDARS)))
+    return body, etag
+
+
+def hub_payload(config: dict[str, Any]) -> dict[str, Any]:
+    mapping, pattern = get_pokemon_translator(config)
+    return HUB.payload(
+        config,
+        lambda text: translate_text(text, config, mapping, pattern),
+        register_image_source,
+    )
+
+
 def infographic_health(config: dict[str, Any]) -> dict[str, Any]:
     try:
         return INFOGRAPHICS.health(config)
@@ -1582,6 +1667,7 @@ def build_api_payload(config: dict[str, Any], stale: bool, web_events: list[dict
     return {
         "events": web_events,
         "meta": {
+            "groups": [{key: group[key] for key in ("id", "label", "color")} for group in TYPE_GROUPS],
             "infographics": {
                 "enabled": settings["enabled"],
                 "attribution": settings["attribution"],
@@ -1734,6 +1820,16 @@ class CalendarHandler(BaseHTTPRequestHandler):
             self.send_json(200, result, {"Cache-Control": "no-store"})
             return
 
+        if path == "/api/hub":
+            try:
+                result = hub_payload(initial_config)
+            except Exception as exc:
+                LOGGER.exception("Hub-Daten nicht verfügbar")
+                self.send_json(503, {"error": str(exc)}, {"Cache-Control": "no-store"})
+                return
+            self.send_json(200, result, {"Cache-Control": "no-cache, max-age=0"})
+            return
+
         if path == "/health":
             payload = json.dumps(build_health_payload(initial_config), ensure_ascii=False).encode("utf-8")
             self.send_bytes(200, payload, "application/json; charset=utf-8", {"Cache-Control": "no-store"})
@@ -1833,6 +1929,15 @@ class CalendarHandler(BaseHTTPRequestHandler):
         if path != config["calendar_path"]:
             self.send_bytes(404, b"Not found\n", "text/plain; charset=utf-8")
             return
+
+        groups = parse_groups((parse_qs(urlsplit(self.path).query).get("groups") or [""])[0])
+        if groups is not None:
+            try:
+                body, etag = filtered_calendar(groups, etag, config)
+            except Exception as exc:
+                LOGGER.exception("Gefilterter Kalender fehlgeschlagen")
+                self.send_bytes(503, f"Kalender derzeit nicht verfügbar: {exc}\n".encode("utf-8"), "text/plain; charset=utf-8")
+                return
 
         if self.headers.get("If-None-Match") == etag:
             self.send_response(304)

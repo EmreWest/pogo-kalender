@@ -2,6 +2,8 @@
 
 Selbst gehosteter Pokémon-GO-Eventkalender für die Community in Augsburg. Der Dienst lädt die Events von LeekDuck über ScrapedDuck, filtert und übersetzt sie und stellt sie als Webkalender und als abonnierbaren iCal-Feed bereit. Eigene Events lassen sich über eine passwortgeschützte Adminoberfläche pflegen.
 
+Dazu kommen eine Ansicht „Aktuell“ mit Raid-Bossen, Eiern, Feldforschung und dem Wetterboost für Augsburg, eine Merkliste, eine Countdown-Leiste und ein filterbares iCal-Abo.
+
 Seit Version 1.7.0 kommen die Infografiken von G47IX (Galix) dazu. Sie werden automatisch aus Discord übernommen und beim passenden Event in der Detailansicht angezeigt, mit Quellenangabe. Galix hat der Einbindung zugestimmt.
 
 - Kalender: https://pogo-kalender.emrebati.de/
@@ -15,6 +17,7 @@ Seit Version 1.7.0 kommen die Infografiken von G47IX (Galix) dazu. Sie werden au
 3. [Öffentliche Endpunkte](#öffentliche-endpunkte)
 4. [Admin-Passwort](#admin-passwort)
 5. [Manuelle Events](#manuelle-events)
+6. [Aktuell, Merkliste, Countdown und Abo-Filter](#aktuell-merkliste-countdown-und-abo-filter)
 6. [G47IX-Infografiken über Discord](#g47ix-infografiken-über-discord)
 7. [Matching: wie Grafiken Events zugeordnet werden](#matching-wie-grafiken-events-zugeordnet-werden)
 8. [Manuelle Zuordnung im Adminbereich](#manuelle-zuordnung-im-adminbereich)
@@ -101,7 +104,8 @@ docker compose up -d
 ## Öffentliche Endpunkte
 
 - `/` – Webkalender mit Monats-, Wochen- und Listenansicht
-- `/pokemon-go-de.ics` – abonnierbarer iCal-Feed (unverändert, ohne Infografiken)
+- `/pokemon-go-de.ics` – abonnierbarer iCal-Feed (ohne Infografiken), mit `?groups=raids,community` auf Eventarten begrenzbar
+- `/api/hub` – Raid-Bosse, Eier, Feldforschung und Wetter für die Ansicht „Aktuell“
 - `/api/events` – Events und Metadaten für die Webansicht. Zugeordnete Infografiken stehen im Feld `infographics`.
 - `/infographic/<id>` – Infografik-Datei. Öffentlich nur, wenn sie einem Event zugeordnet ist.
 - `/status` – visuelle Statusseite, jetzt mit Infografik- und Worker-Status
@@ -136,6 +140,34 @@ Nach dem Login können Titel, Eventtyp, ganztägig oder Start/Ende, Beschreibung
 Vordefinierte Typen sind `manual-event`, `manual-meetup`, `manual-raid` und `manual-reminder`. Eigene Typen aus Kleinbuchstaben, Zahlen und Bindestrichen sind möglich.
 
 Gespeichert wird atomar in `/data/manual-events.json`. Bei ganztägigen Events ist das gespeicherte Ende exklusiv, wie in iCal üblich: Ein Event nur am 22. August steht als `"start": "2026-08-22", "end": "2026-08-23"` in der Datei.
+
+## Aktuell, Merkliste, Countdown und Abo-Filter
+
+Ansicht „Aktuell“ (mobil dritter Reiter, am Desktop neben Monat/Woche/Liste):
+- Wetter für den eingestellten Ort mit den im Spiel verstärkten Typen und der Vorschau für die nächsten Stunden. Die Daten kommen von Open-Meteo (kostenlos, ohne Schlüssel) und werden alle 15 Minuten geholt. Die Einstufung als Pokémon-GO-Wetter ist eine Näherung, weil das Spiel eigene Wetterdaten nutzt. „Windig“ gilt ab `windy_speed_kmh` (25) oder Böen ab `windy_gust_kmh` (40).
+- Raid-Bosse nach Stufe mit Typen, WP, Wetterboost-WP und Shiny-Hinweis. Bosse, die gerade vom Wetter verstärkt werden, sind hervorgehoben.
+- Eier nach Distanz, Abenteuer-Sync- und Geschenk-Eier getrennt.
+- Feldforschung mit deutschen Aufgabentexten und Suche nach Aufgabe oder Pokémon. Unbekannte Aufgabenformulierungen bleiben englisch.
+
+Raids, Eier und Forschung stammen wie die Events von ScrapedDuck (LeekDuck) und werden alle 30 Minuten aktualisiert. Ist eine Quelle nicht erreichbar, wird der zuletzt bekannte Stand aus `/data/hub-cache.json` gezeigt.
+
+Filter und Merkliste:
+- Die Chips über dem Kalender filtern nach Eventart, mobil und am Desktop. Die Auswahl merkt sich der Browser.
+- Der Stern in der Detailansicht setzt ein Event auf die Merkliste. Der Chip „Merkliste“ zeigt nur gemerkte Events. Die Merkliste liegt nur im Browser, ein Konto gibt es nicht.
+
+Countdown: Über den Infografiken stehen laufende und demnächst beginnende kurze Events (Raid-Stunde, Rampenlicht, Community Day, Dyna-Montag, große Events, Treffen vor Ort) der nächsten sieben Tage und alle Events von der Merkliste, mit Restzeit.
+
+Abo-Filter: „Abonnieren“ öffnet eine Auswahl der Eventarten. Daraus entsteht eine eigene Abo-Adresse, zum Beispiel `…/pokemon-go-de.ics?groups=raids,community`. Gruppen: `raids`, `dyna`, `spotlight`, `community`, `big`, `research`, `rocket`, `events`, `local` (eigene Events aus dem Admin). Die bestehende Adresse ohne Parameter liefert weiter alles.
+
+Konfiguration in der `config.json`:
+
+```json
+"hub": {
+  "enabled": true,
+  "cache_seconds": 1800,
+  "weather": { "enabled": true, "name": "Augsburg", "latitude": 48.3705, "longitude": 10.8978 }
+}
+```
 
 ## G47IX-Infografiken über Discord
 
@@ -368,6 +400,7 @@ neu hinzu:
 
 ```text
 /infographic/*
+/api/hub
 /api/admin/infographics
 /api/admin/infographics/*
 ```

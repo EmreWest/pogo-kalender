@@ -109,5 +109,18 @@
       "news_days": 14,
       "news_max_items": 6
     }
+  },
+  "hub": {
+    "enabled": true,
+    "cache_seconds": 1800,
+    "weather": {
+      "enabled": true,
+      "name": "Augsburg",
+      "latitude": 48.3705,
+      "longitude": 10.8978,
+      "cache_seconds": 900,
+      "windy_speed_kmh": 25,
+      "windy_gust_kmh": 40
+    }
   }
 }

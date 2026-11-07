@@ -160,7 +160,7 @@ class WebTest(WebBase):
         status, health = self.client.json("GET", "/health")
         self.assertEqual(status, 200)
         self.assertEqual(health["status"], "ok")
-        self.assertEqual(health["service_version"], "1.7.0")
+        self.assertEqual(health["service_version"], "1.8.0")
         self.assertTrue(health["infographics"]["enabled"])
 
     def test_ical_unchanged_by_infographics(self) -> None:
