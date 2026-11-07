@@ -119,7 +119,7 @@ class HubPayloadTest(WebBase):
         self.assertEqual(data["research"][1]["rewards"][0]["name"], "Pikachu mit Hut und Umhang")
 
         weather = data["weather"]
-        self.assertEqual((weather["location"], weather["current"]["label"]), ("Augsburg", "Regen"))
+        self.assertEqual((weather["location"], weather["current"]["label"]), ("Berlin", "Regen"))
         self.assertEqual([hour["label"] for hour in weather["forecast"]], ["Bewölkt", "Windig", "Klar"])
         self.assertEqual(data["errors"], {})
 
@@ -193,20 +193,20 @@ class LocationSearchTest(unittest.TestCase):
         return [item["label"] for item in results], more
 
     def test_postcode(self) -> None:
-        self.assertEqual(self.labels("86150")[0], ["86150 Augsburg"])
-        labels, more = self.labels("8615")
-        self.assertTrue(all(label.startswith("8615") for label in labels))
-        self.assertIn("86157 Augsburg", labels)
+        self.assertEqual(self.labels("34117")[0], ["34117 Kassel"])
+        labels, more = self.labels("3411")
+        self.assertTrue(all(label.startswith("3411") for label in labels))
+        self.assertIn("34119 Kassel", labels)
 
     def test_place_name_with_umlauts(self) -> None:
-        self.assertEqual(self.labels("Neusäß")[0], ["86356 Neusäß"])
-        self.assertEqual(self.labels("neusaess")[0], ["86356 Neusäß"])
-        self.assertEqual(self.labels("Königsbrunn")[0], ["86343 Königsbrunn"])
+        self.assertEqual(self.labels("Gießen")[0][0], "35390 Gießen")
+        self.assertEqual(self.labels("giessen")[0][0], "35390 Gießen")
+        self.assertEqual(self.labels("goettingen")[0][0], "37073 Göttingen")
 
     def test_city_with_many_postcodes_lists_all(self) -> None:
-        labels, more = self.labels("Augsburg")
-        self.assertEqual(labels[0], "86150 Augsburg")
-        self.assertEqual(sum(1 for label in labels if label.endswith(" Augsburg")), 14)
+        labels, more = self.labels("Kassel")
+        self.assertEqual(labels[0], "34117 Kassel")
+        self.assertEqual(sum(1 for label in labels if label.endswith(" Kassel")), 11)
         self.assertFalse(any("Agentur" in label or "Amtsgericht" in label for label in labels))
 
     def test_postcode_and_place_combined(self) -> None:
@@ -226,10 +226,10 @@ class LocationEndpointTest(WebBase):
             app.PUBLIC_RATE.clear()
 
     def test_location_search_endpoint(self) -> None:
-        status, data = self.client.json("GET", "/api/locations?q=86368")
+        status, data = self.client.json("GET", "/api/locations?q=35390")
         self.assertEqual(status, 200)
-        self.assertEqual(data["results"][0]["label"], "86368 Gersthofen")
-        self.assertAlmostEqual(data["results"][0]["latitude"], 48.42, places=1)
+        self.assertEqual(data["results"][0]["label"], "35390 Gießen")
+        self.assertAlmostEqual(data["results"][0]["latitude"], 50.58, places=1)
 
     def test_fallback_to_open_meteo_for_foreign_places(self) -> None:
         def fetch(url, timeout):
@@ -242,9 +242,9 @@ class LocationEndpointTest(WebBase):
         self.assertEqual((data["source"], data["results"][0]["label"]), ("Open-Meteo", "Innsbruck"))
 
     def test_weather_for_chosen_place(self) -> None:
-        status, data = self.client.json("GET", "/api/weather?lat=48.4244&lon=10.8823&name=86368%20Gersthofen")
+        status, data = self.client.json("GET", "/api/weather?lat=50.5841&lon=8.6784&name=35390%20Gie%C3%9Fen")
         self.assertEqual(status, 200)
-        self.assertEqual((data["location"], data["current"]["label"]), ("86368 Gersthofen", "Regen"))
+        self.assertEqual((data["location"], data["current"]["label"]), ("35390 Gießen", "Regen"))
         self.assertEqual(self.client.json("GET", "/api/weather?lat=999&lon=10")[0], 400)
         self.assertEqual(self.client.json("GET", "/api/weather?lat=abc&lon=10")[0], 400)
 

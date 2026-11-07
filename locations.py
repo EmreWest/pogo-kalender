@@ -32,7 +32,7 @@ def fold(text: str) -> str:
 
 
 def parse_query(query: str) -> tuple[str, str]:
-    """Split "86150 Augsburg" into postcode prefix and place text."""
+    """Split "34117 Kassel" into postcode prefix and place text."""
     text = " ".join(str(query or "").split())[:80]
     digits = re.findall(r"\b\d{1,5}\b", text)
     postcode = digits[0] if digits else ""

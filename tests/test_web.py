@@ -285,7 +285,7 @@ class WebTest(WebBase):
     def test_19_assign_to_manual_event(self) -> None:
         self.client.login()
         status, created = self.client.json("POST", "/api/admin/events", {
-            "title": "Raid-Treffen Augsburg",
+            "title": "Raid-Treffen am Marktplatz",
             "type": "manual-raid",
             "all_day": False,
             "start": "2026-11-15T17:00",

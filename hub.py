@@ -35,9 +35,9 @@ DEFAULT_HUB_CONFIG: dict[str, Any] = {
     "cache_file": "/data/hub-cache.json",
     "weather": {
         "enabled": True,
-        "name": "Augsburg",
-        "latitude": 48.3705,
-        "longitude": 10.8978,
+        "name": "Berlin",
+        "latitude": 52.52,
+        "longitude": 13.405,
         "cache_seconds": 900,
         "windy_speed_kmh": 25,
         "windy_gust_kmh": 40,

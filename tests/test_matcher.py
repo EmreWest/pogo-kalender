@@ -167,10 +167,10 @@ class MatchingTest(unittest.TestCase):
 
     def test_manual_event_can_be_matched(self) -> None:
         manual = event(
-            "manual-abc123", "Raid-Treffen Augsburg Rayquaza",
+            "manual-abc123", "Raid-Treffen am Marktplatz Rayquaza",
             "2026-11-15T17:00:00+01:00", "2026-11-15T20:00:00+01:00", "manual-raid", manual=True,
         )
-        result = match("Rayquaza Raid-Treffen Augsburg\n15. November 17:00 - 20:00", events=ALL_EVENTS + [manual])
+        result = match("Rayquaza Raid-Treffen am Marktplatz\n15. November 17:00 - 20:00", events=ALL_EVENTS + [manual])
         self.assertEqual(result["event_id"], "manual-abc123")
 
 
