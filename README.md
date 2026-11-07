@@ -106,6 +106,7 @@ docker compose up -d
 - `/` – Webkalender mit Monats-, Wochen- und Listenansicht
 - `/pokemon-go-de.ics` – abonnierbarer iCal-Feed (ohne Infografiken), mit `?groups=raids,community` auf Eventarten begrenzbar
 - `/api/hub` – Raid-Bosse, Eier, Feldforschung und Wetter für die Ansicht „Aktuell“
+- `/api/locations`, `/api/weather` – Ortssuche (PLZ/Ort) und Wetter für einen gewählten Ort
 - `/api/events` – Events und Metadaten für die Webansicht. Zugeordnete Infografiken stehen im Feld `infographics`.
 - `/infographic/<id>` – Infografik-Datei. Öffentlich nur, wenn sie einem Event zugeordnet ist.
 - `/status` – visuelle Statusseite, jetzt mit Infografik- und Worker-Status
@@ -148,6 +149,11 @@ Ansicht „Aktuell“ (mobil dritter Reiter, am Desktop neben Monat/Woche/Liste)
 - Raid-Bosse nach Stufe mit Typen, WP, Wetterboost-WP und Shiny-Hinweis. Bosse, die gerade vom Wetter verstärkt werden, sind hervorgehoben.
 - Eier nach Distanz, Abenteuer-Sync- und Geschenk-Eier getrennt.
 - Feldforschung mit deutschen Aufgabentexten und Suche nach Aufgabe oder Pokémon. Unbekannte Aufgabenformulierungen bleiben englisch.
+
+Mit „Ort ändern“ in der Wetterkarte wählt jeder Besucher seinen eigenen Ort: Postleitzahl und/oder Ortsnamen eingeben und aus der Liste („86150 Augsburg · Bayern“) auswählen. Der Gerätestandort wird nicht abgefragt. Die Wahl speichert nur der Browser, „Standard verwenden“ setzt zurück. Wetterboost-Markierungen bei den Raid-Bossen richten sich nach dem gewählten Ort.
+- Deutsche Postleitzahlen und Orte werden offline in `plz-de.json` gesucht (GeoNames, CC BY 4.0). Die Eingabe verlässt den Server dabei nicht. Großkunden-Postleitzahlen von Firmen und Behörden sind herausgefiltert.
+- Orte außerhalb Deutschlands (zum Beispiel Innsbruck) sucht der Server bei Open-Meteo.
+- Endpunkte: `/api/locations?q=…` und `/api/weather?lat=…&lon=…&name=…`. Wetter wird pro Ort 15 Minuten zwischengespeichert. Anfragen, die externe Abrufe auslösen, sind auf 60 pro 10 Minuten und Besucher begrenzt.
 
 Raids, Eier und Forschung stammen wie die Events von ScrapedDuck (LeekDuck) und werden alle 30 Minuten aktualisiert. Ist eine Quelle nicht erreichbar, wird der zuletzt bekannte Stand aus `/data/hub-cache.json` gezeigt.
 
@@ -401,6 +407,8 @@ neu hinzu:
 ```text
 /infographic/*
 /api/hub
+/api/locations
+/api/weather
 /api/admin/infographics
 /api/admin/infographics/*
 ```

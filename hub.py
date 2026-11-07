@@ -213,6 +213,7 @@ class HubService:
         self._weather: dict[str, Any] | None = None
         self._weather_fetched = 0.0
         self._errors: dict[str, str] = {}
+        self._weather_by_place: dict[str, tuple[float, dict[str, Any]]] = {}
         self.fetch: Callable[[str, int], bytes] = self._fetch
 
     @staticmethod
@@ -280,17 +281,8 @@ class HubService:
         now = time.monotonic()
         if self._weather is not None and now - self._weather_fetched < options["cache_seconds"]:
             return self._weather
-        query = urllib.parse.urlencode({
-            "latitude": f"{options['latitude']:.4f}",
-            "longitude": f"{options['longitude']:.4f}",
-            "current": "weather_code,wind_speed_10m,wind_gusts_10m,temperature_2m,is_day",
-            "hourly": "weather_code,wind_speed_10m,wind_gusts_10m,is_day",
-            "forecast_hours": 10,
-            "timezone": tz_name,
-        })
         try:
-            raw = json.loads(self.fetch(f"https://api.open-meteo.com/v1/forecast?{query}", timeout).decode("utf-8"))
-            self._weather = self.weather_from_open_meteo(raw, options)
+            self._weather = self.fetch_weather(options, timeout, tz_name)
             self._errors.pop("weather", None)
             self._weather_fetched = now
         except Exception as exc:
@@ -300,6 +292,37 @@ class HubService:
             if self._weather is not None:
                 self._weather = dict(self._weather, stale=True)
         return self._weather
+
+    def fetch_weather(self, options: dict[str, Any], timeout: int, tz_name: str) -> dict[str, Any]:
+        query = urllib.parse.urlencode({
+            "latitude": f"{float(options['latitude']):.4f}",
+            "longitude": f"{float(options['longitude']):.4f}",
+            "current": "weather_code,wind_speed_10m,wind_gusts_10m,temperature_2m,is_day",
+            "hourly": "weather_code,wind_speed_10m,wind_gusts_10m,is_day",
+            "forecast_hours": 10,
+            "timezone": tz_name,
+        })
+        raw = json.loads(self.fetch(f"https://api.open-meteo.com/v1/forecast?{query}", timeout).decode("utf-8"))
+        return self.weather_from_open_meteo(raw, options)
+
+    def weather_at(self, config: dict[str, Any], latitude: float, longitude: float, name: str) -> dict[str, Any]:
+        """Weather for a place the visitor picked (cached per ~1 km grid cell)."""
+        settings = hub_settings(config)
+        options = dict(settings["weather"], latitude=latitude, longitude=longitude, name=name)
+        key = f"{latitude:.2f},{longitude:.2f}"
+        now = time.monotonic()
+        with self._lock:
+            cached = self._weather_by_place.get(key)
+            if cached and now - cached[0] < options["cache_seconds"]:
+                return dict(cached[1], location=name)
+        data = self.fetch_weather(options, int(config.get("request_timeout_seconds", 20)),
+                                  str(config.get("timezone") or "Europe/Berlin"))
+        with self._lock:
+            self._weather_by_place[key] = (now, data)
+            if len(self._weather_by_place) > 500:
+                oldest = min(self._weather_by_place, key=lambda k: self._weather_by_place[k][0])
+                self._weather_by_place.pop(oldest, None)
+        return dict(data, location=name)
 
     @staticmethod
     def weather_from_open_meteo(raw: dict[str, Any], options: dict[str, Any]) -> dict[str, Any]:

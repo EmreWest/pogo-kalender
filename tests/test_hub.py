@@ -180,3 +180,78 @@ class FilteredCalendarTest(WebBase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LocationSearchTest(unittest.TestCase):
+    def setUp(self) -> None:
+        import locations
+
+        self.index = locations.LocationIndex(helpers.ROOT / "plz-de.json")
+
+    def labels(self, query):
+        results, more = self.index.search(query)
+        return [item["label"] for item in results], more
+
+    def test_postcode(self) -> None:
+        self.assertEqual(self.labels("86150")[0], ["86150 Augsburg"])
+        labels, more = self.labels("8615")
+        self.assertTrue(all(label.startswith("8615") for label in labels))
+        self.assertIn("86157 Augsburg", labels)
+
+    def test_place_name_with_umlauts(self) -> None:
+        self.assertEqual(self.labels("Neusäß")[0], ["86356 Neusäß"])
+        self.assertEqual(self.labels("neusaess")[0], ["86356 Neusäß"])
+        self.assertEqual(self.labels("Königsbrunn")[0], ["86343 Königsbrunn"])
+
+    def test_city_with_many_postcodes_lists_all(self) -> None:
+        labels, more = self.labels("Augsburg")
+        self.assertEqual(labels[0], "86150 Augsburg")
+        self.assertEqual(sum(1 for label in labels if label.endswith(" Augsburg")), 14)
+        self.assertFalse(any("Agentur" in label or "Amtsgericht" in label for label in labels))
+
+    def test_postcode_and_place_combined(self) -> None:
+        self.assertEqual(self.labels("90762 Fürth")[0], ["90762 Fürth"])
+        self.assertEqual(self.labels("Fürth 64658")[0], ["64658 Fürth"])
+
+    def test_too_short(self) -> None:
+        self.assertEqual(self.labels("x"), ([], False))
+
+
+class LocationEndpointTest(WebBase):
+    def setUp(self) -> None:
+        super().setUp()
+        app.HUB.__init__()
+        app.HUB.fetch = fake_fetch
+        with app.PUBLIC_RATE_LOCK:
+            app.PUBLIC_RATE.clear()
+
+    def test_location_search_endpoint(self) -> None:
+        status, data = self.client.json("GET", "/api/locations?q=86368")
+        self.assertEqual(status, 200)
+        self.assertEqual(data["results"][0]["label"], "86368 Gersthofen")
+        self.assertAlmostEqual(data["results"][0]["latitude"], 48.42, places=1)
+
+    def test_fallback_to_open_meteo_for_foreign_places(self) -> None:
+        def fetch(url, timeout):
+            self.assertIn("geocoding-api.open-meteo.com", url)
+            return json.dumps({"results": [{"name": "Innsbruck", "latitude": 47.26, "longitude": 11.39,
+                                            "admin1": "Tirol", "country": "Österreich", "country_code": "AT"}]}).encode()
+
+        app.HUB.fetch = fetch
+        status, data = self.client.json("GET", "/api/locations?q=Innsbruck")
+        self.assertEqual((data["source"], data["results"][0]["label"]), ("Open-Meteo", "Innsbruck"))
+
+    def test_weather_for_chosen_place(self) -> None:
+        status, data = self.client.json("GET", "/api/weather?lat=48.4244&lon=10.8823&name=86368%20Gersthofen")
+        self.assertEqual(status, 200)
+        self.assertEqual((data["location"], data["current"]["label"]), ("86368 Gersthofen", "Regen"))
+        self.assertEqual(self.client.json("GET", "/api/weather?lat=999&lon=10")[0], 400)
+        self.assertEqual(self.client.json("GET", "/api/weather?lat=abc&lon=10")[0], 400)
+
+    def test_rate_limit(self) -> None:
+        app.PUBLIC_RATE_LIMIT = (3, 600)
+        try:
+            codes = [self.client.json("GET", "/api/weather?lat=48.4&lon=10.9&name=X")[0] for _ in range(4)]
+        finally:
+            app.PUBLIC_RATE_LIMIT = (60, 600)
+        self.assertEqual(codes, [200, 200, 200, 429])

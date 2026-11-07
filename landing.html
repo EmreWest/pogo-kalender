@@ -1499,6 +1499,27 @@
       .hub-grid { grid-template-columns: 1fr; }
       #hub-view { display: none !important; }
     }
+
+    /* ---------- Ort für das Wetter ---------- */
+    .hub-weather { grid-template-columns: minmax(0, 1fr); }
+    .hub-weather > * { min-width: 0; }
+    .place-editor { grid-template-columns: minmax(0, 1fr); }
+    .place-editor > * { min-width: 0; }
+    .place-form input { width: 100%; }
+    .place-button { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--brand); font: inherit; font-size: .78rem; font-weight: 800; cursor: pointer; }
+    .place-editor { display: grid; gap: 8px; padding: 12px; border: 1px dashed var(--line); border-radius: 12px; background: var(--surface); }
+    .place-form { display: flex; gap: 8px; }
+    .place-form input { flex: 1; min-width: 0; min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--text); font: inherit; }
+    .place-form button { min-height: 40px; padding: 0 14px; border: 1px solid var(--brand); border-radius: 10px; background: var(--brand); color: white; font: inherit; font-size: .84rem; font-weight: 800; cursor: pointer; }
+    .place-results { display: grid; gap: 4px; max-height: 280px; overflow-y: auto; }
+    .place-result { display: grid; gap: 1px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--text); text-align: left; font: inherit; cursor: pointer; }
+    .place-result strong { font-size: .86rem; }
+    .place-result span { color: var(--muted); font-size: .72rem; }
+    .place-status { margin: 0; color: var(--muted); font-size: .76rem; }
+    .place-status.error { color: var(--danger); }
+    .place-links { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: .72rem; color: var(--muted); }
+    .place-links button { padding: 0; border: 0; background: none; color: var(--brand); font: inherit; font-weight: 800; cursor: pointer; }
+    .place-links a { color: var(--muted); }
   </style>
 </head>
 <body>
@@ -3163,8 +3184,144 @@
       fighting: "#b91c1c", poison: "#a855f7", ground: "#a16207", flying: "#818cf8", psychic: "#ec4899", bug: "#84cc16",
       rock: "#78716c", ghost: "#6d28d9", dragon: "#4f46e5", dark: "#374151", steel: "#64748b", fairy: "#f472b6"
     };
-    const hub = { data: null, loading: false, error: null, tab: "raids", query: "" };
-    try { hub.tab = localStorage.getItem("pogo-hub-tab") || "raids"; } catch (_) {}
+    const hub = {
+      data: null, loading: false, error: null, tab: "raids", query: "",
+      place: null, placeWeather: null, placeLoading: false, placeError: null, editorOpen: false
+    };
+    try {
+      hub.tab = localStorage.getItem("pogo-hub-tab") || "raids";
+      const savedPlace = JSON.parse(localStorage.getItem("pogo-weather-place") || "null");
+      if (savedPlace && Number.isFinite(savedPlace.latitude) && Number.isFinite(savedPlace.longitude)) hub.place = savedPlace;
+    } catch (_) {}
+
+    function activeWeather() {
+      return hub.place ? hub.placeWeather : (hub.data && hub.data.weather);
+    }
+
+    async function loadPlaceWeather() {
+      if (!hub.place || hub.placeLoading) return;
+      hub.placeLoading = true;
+      hub.placeError = null;
+      try {
+        const params = new URLSearchParams({ lat: hub.place.latitude, lon: hub.place.longitude, name: hub.place.label });
+        const response = await fetch(`/api/weather?${params}`, { cache: "no-store" });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+        hub.placeWeather = data;
+      } catch (error) {
+        hub.placeError = error.message;
+      } finally {
+        hub.placeLoading = false;
+        renderCurrentView();
+      }
+    }
+
+    function setPlace(place) {
+      hub.place = place;
+      hub.placeWeather = null;
+      hub.placeError = null;
+      hub.editorOpen = false;
+      try {
+        if (place) localStorage.setItem("pogo-weather-place", JSON.stringify(place));
+        else localStorage.removeItem("pogo-weather-place");
+      } catch (_) {}
+      if (place) loadPlaceWeather(); else renderCurrentView();
+    }
+
+    function placeEditor() {
+      const editor = document.createElement("div");
+      editor.className = "place-editor";
+      const form = document.createElement("form");
+      form.className = "place-form";
+      const input = document.createElement("input");
+      input.type = "search";
+      input.placeholder = "PLZ und/oder Ort, z. B. 86150 oder Gersthofen";
+      input.autocomplete = "off";
+      input.setAttribute("aria-label", "Postleitzahl oder Ort");
+      const submit = document.createElement("button");
+      submit.type = "submit";
+      submit.textContent = "Suchen";
+      form.append(input, submit);
+      const status = document.createElement("p");
+      status.className = "place-status";
+      status.textContent = "Dein Standort wird nicht abgefragt. Gib einfach eine Postleitzahl oder einen Ort ein.";
+      const results = document.createElement("div");
+      results.className = "place-results";
+      let timer = null;
+      let sequence = 0;
+
+      async function search() {
+        const query = input.value.trim();
+        results.replaceChildren();
+        status.classList.remove("error");
+        if (query.replace(/\s/g, "").length < 2) {
+          status.textContent = "Bitte mindestens zwei Zeichen eingeben.";
+          return;
+        }
+        const current = ++sequence;
+        status.textContent = "Suche …";
+        try {
+          const response = await fetch(`/api/locations?q=${encodeURIComponent(query)}`);
+          const data = await response.json();
+          if (current !== sequence) return;
+          const items = Array.isArray(data.results) ? data.results : [];
+          if (!items.length) {
+            status.textContent = "Kein Ort gefunden. Prüfe die Schreibweise oder versuche die Postleitzahl.";
+            return;
+          }
+          if (items.length === 1 && /^\d{5}$/.test(query)) {
+            status.textContent = "Ein Treffer:";
+          } else {
+            status.textContent = data.more ? "Viele Treffer – ergänze die PLZ oder den Ort für eine genauere Liste." : "Bitte auswählen:";
+          }
+          for (const item of items) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "place-result";
+            const title = document.createElement("strong");
+            title.textContent = item.label;
+            const region = document.createElement("span");
+            region.textContent = item.region || "";
+            button.append(title, region);
+            button.addEventListener("click", () => setPlace({
+              label: item.label, name: item.name, postcode: item.postcode,
+              latitude: Number(item.latitude), longitude: Number(item.longitude)
+            }));
+            results.appendChild(button);
+          }
+        } catch (error) {
+          if (current !== sequence) return;
+          status.textContent = "Suche gerade nicht möglich.";
+          status.classList.add("error");
+        }
+      }
+
+      form.addEventListener("submit", event => { event.preventDefault(); clearTimeout(timer); search(); });
+      input.addEventListener("input", () => {
+        clearTimeout(timer);
+        if (input.value.trim().length >= 3) timer = setTimeout(search, 350);
+      });
+
+      const links = document.createElement("div");
+      links.className = "place-links";
+      const left = document.createElement("span");
+      if (hub.place) {
+        const reset = document.createElement("button");
+        reset.type = "button";
+        reset.textContent = `Standard verwenden (${(hub.data && hub.data.weather && hub.data.weather.location) || "Standardort"})`;
+        reset.addEventListener("click", () => setPlace(null));
+        left.appendChild(reset);
+      }
+      const credit = document.createElement("a");
+      credit.href = "https://www.geonames.org/";
+      credit.target = "_blank";
+      credit.rel = "noopener noreferrer";
+      credit.textContent = "Ortsdaten: GeoNames (CC BY 4.0)";
+      links.append(left, credit);
+      editor.append(form, status, results, links);
+      setTimeout(() => input.focus(), 0);
+      return editor;
+    }
 
     function typePills(types) {
       const wrap = document.createElement("div");
@@ -3211,20 +3368,42 @@
     }
 
     function renderWeatherCard(container, weather) {
-      if (!weather || !weather.current) return;
       const card = document.createElement("section");
       card.className = "hub-weather";
       const head = document.createElement("div");
       head.className = "hub-weather-head";
       const title = document.createElement("h3");
-      title.textContent = `Wetter in ${weather.location || "der Stadt"}: ${weather.current.label}`;
       const info = document.createElement("span");
+      const placeButton = document.createElement("button");
+      placeButton.type = "button";
+      placeButton.className = "place-button";
+      placeButton.textContent = hub.editorOpen ? "Abbrechen" : "Ort ändern";
+      placeButton.setAttribute("aria-expanded", String(hub.editorOpen));
+      placeButton.addEventListener("click", () => { hub.editorOpen = !hub.editorOpen; renderCurrentView(); });
+      const right = document.createElement("span");
+      right.style.cssText = "display:flex;align-items:center;gap:10px";
+      right.append(info, placeButton);
+      head.append(title, right);
+      card.appendChild(head);
+      if (hub.editorOpen) card.appendChild(placeEditor());
+      if (!weather || !weather.current) {
+        const label = hub.place ? hub.place.label : "deinem Ort";
+        title.textContent = `Wetter in ${label}`;
+        const note = document.createElement("p");
+        note.className = "hub-note";
+        if (hub.place && hub.placeError) note.textContent = `Wetter konnte nicht geladen werden (${hub.placeError}).`;
+        else if (hub.place) { note.textContent = "Wetter wird geladen …"; loadPlaceWeather(); }
+        else note.textContent = "Wetterdaten sind gerade nicht verfügbar.";
+        card.appendChild(note);
+        container.appendChild(card);
+        return;
+      }
+      title.textContent = `Wetter in ${weather.location || "der Stadt"}: ${weather.current.label}`;
       info.textContent = weather.temperature != null ? `${Math.round(weather.temperature)} °C` : "";
-      head.append(title, info);
       const boostLabel = document.createElement("div");
       boostLabel.className = "hub-card-meta";
       boostLabel.textContent = "Verstärkte Typen:";
-      card.append(head, boostLabel, typePills(weather.current.boosted));
+      card.append(boostLabel, typePills(weather.current.boosted));
       if (Array.isArray(weather.forecast) && weather.forecast.length) {
         const forecast = document.createElement("div");
         forecast.className = "hub-forecast";
@@ -3250,6 +3429,7 @@
         container.appendChild(Object.assign(document.createElement("div"), { className: "m-empty", textContent: "Keine Raid-Daten verfügbar." }));
         return;
       }
+      const weatherKey = (activeWeather() && activeWeather().current && activeWeather().current.key) || null;
       for (const tier of data.raids) {
         const heading = document.createElement("h3");
         heading.className = "hub-group-title";
@@ -3258,7 +3438,8 @@
         grid.className = "hub-grid";
         for (const boss of tier.bosses) {
           const card = document.createElement("div");
-          card.className = `hub-card${boss.boostedNow ? " boosted" : ""}`;
+          const boostedNow = Boolean(weatherKey && (boss.weather || []).some(item => item.key === weatherKey));
+          card.className = `hub-card${boostedNow ? " boosted" : ""}`;
           const text = document.createElement("div");
           const name = document.createElement("div");
           name.className = "hub-card-name";
@@ -3274,7 +3455,7 @@
             weatherLine.textContent = `Wetter: ${boss.weather.map(item => item.label).join(", ")}`;
             text.appendChild(weatherLine);
           }
-          if (boss.boostedNow) {
+          if (boostedNow) {
             const badge = document.createElement("span");
             badge.className = "hub-boost-badge";
             badge.textContent = "Wetterboost gerade aktiv";
@@ -3369,7 +3550,7 @@
         container.appendChild(Object.assign(document.createElement("div"), { className: "m-empty", textContent: "Dieser Bereich ist deaktiviert." }));
         return;
       }
-      renderWeatherCard(container, data.weather);
+      renderWeatherCard(container, activeWeather());
       const tabs = document.createElement("div");
       tabs.className = "hub-tabs";
       tabs.setAttribute("role", "group");

@@ -20,6 +20,7 @@ COPY icon-512.png /app/icon-512.png
 COPY site.webmanifest /app/site.webmanifest
 COPY pokemon_names-de.json /app/pokemon_names-de.json
 COPY pokemon_species-de.json /app/pokemon_species-de.json
+COPY plz-de.json /app/plz-de.json
 
 RUN addgroup -S app && adduser -S -G app app \
     && mkdir -p /data \

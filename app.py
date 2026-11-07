@@ -27,6 +27,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import hub
 import infographic_store
+import locations
 from infographic_manager import InfographicManager
 
 DEFAULT_CONFIG: dict[str, Any] = {
@@ -1606,6 +1607,41 @@ def build_health_payload(config: dict[str, Any]) -> dict[str, Any]:
 FILTERED_CALENDARS: dict[str, tuple[str, bytes, str]] = {}
 FILTERED_LOCK = threading.Lock()
 HUB = hub.HubService()
+LOCATIONS = locations.LocationIndex(os.environ.get("LOCATIONS_FILE") or Path(__file__).with_name("plz-de.json"))
+PUBLIC_RATE_LOCK = threading.Lock()
+PUBLIC_RATE: dict[str, list[float]] = {}
+PUBLIC_RATE_LIMIT = (60, 600)  # requests per window (seconds) and client
+
+
+def public_rate_allowed(ip: str) -> bool:
+    """Simple per-client limit for endpoints that trigger outbound requests."""
+    limit, window = PUBLIC_RATE_LIMIT
+    now = time.time()
+    with PUBLIC_RATE_LOCK:
+        recent = [stamp for stamp in PUBLIC_RATE.get(ip, []) if now - stamp < window]
+        if len(recent) >= limit:
+            PUBLIC_RATE[ip] = recent
+            return False
+        recent.append(now)
+        PUBLIC_RATE[ip] = recent
+        if len(PUBLIC_RATE) > 5000:
+            for key in [key for key, stamps in PUBLIC_RATE.items() if not stamps or now - stamps[-1] > window]:
+                PUBLIC_RATE.pop(key, None)
+        return True
+
+
+def search_locations(query: str, allow_remote: bool) -> dict[str, Any]:
+    results, more = LOCATIONS.search(query)
+    source = "GeoNames"
+    if not results and allow_remote:
+        _postcode, place = locations.parse_query(query)
+        if len(place) >= 3:
+            try:
+                results = locations.open_meteo_search(query, HUB.fetch)
+                source = "Open-Meteo"
+            except Exception as exc:
+                LOGGER.warning("Ortssuche über Open-Meteo fehlgeschlagen: %s", exc)
+    return {"results": results, "more": more, "source": source}
 
 
 def filtered_calendar(groups: set[str], base_etag: str, config: dict[str, Any]) -> tuple[bytes, str]:
@@ -1818,6 +1854,36 @@ class CalendarHandler(BaseHTTPRequestHandler):
                 self.send_json(500, {"error": str(exc)}, {"Cache-Control": "no-store"})
                 return
             self.send_json(200, result, {"Cache-Control": "no-store"})
+            return
+
+        if path in ("/api/locations", "/api/weather"):
+            query = parse_qs(urlsplit(self.path).query)
+            headers = {"Cache-Control": "no-store"}
+            ip = client_ip(self.headers, self.client_address[0])
+            if path == "/api/locations":
+                text = (query.get("q") or [""])[0][:80]
+                result = search_locations(text, allow_remote=public_rate_allowed(ip))
+                self.send_json(200, result, {"Cache-Control": "public, max-age=3600"})
+                return
+            try:
+                latitude = float((query.get("lat") or [""])[0])
+                longitude = float((query.get("lon") or [""])[0])
+                if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+                    raise ValueError
+            except ValueError:
+                self.send_json(400, {"error": "Ungültige Koordinaten."}, headers)
+                return
+            name = sanitize_text((query.get("name") or [""])[0][:80], 80, "Ort") or f"{latitude:.2f}, {longitude:.2f}"
+            if not public_rate_allowed(ip):
+                self.send_json(429, {"error": "Zu viele Anfragen. Bitte später erneut versuchen."}, {**headers, "Retry-After": "120"})
+                return
+            try:
+                weather = HUB.weather_at(initial_config, round(latitude, 4), round(longitude, 4), name)
+            except Exception as exc:
+                LOGGER.warning("Wetter für %s nicht verfügbar: %s", name, exc)
+                self.send_json(503, {"error": "Wetterdaten sind gerade nicht verfügbar."}, headers)
+                return
+            self.send_json(200, weather, {"Cache-Control": "no-cache, max-age=0"})
             return
 
         if path == "/api/hub":
