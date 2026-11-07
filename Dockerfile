@@ -7,7 +7,7 @@ WORKDIR /app
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
-COPY app.py hub.py infographic_store.py infographic_manager.py event_matcher.py ocr.py discord_worker.py /app/
+COPY *.py /app/
 COPY landing.html /app/landing.html
 COPY status.html /app/status.html
 COPY admin.html /app/admin.html
