@@ -3,13 +3,13 @@
   "events": [
     {
       "id": "manual-example-raid-meetup",
-      "title": "Raid-Treffen Augsburg",
-      "description": "Gemeinsames Raid-Treffen am Rathausplatz.",
+      "title": "Raid-Treffen am Marktplatz",
+      "description": "Gemeinsames Raid-Treffen am Marktplatz.",
       "start": "2026-08-15T17:00+02:00",
       "end": "2026-08-15T20:00+02:00",
       "all_day": false,
       "type": "manual-raid",
-      "location": "Rathausplatz, Augsburg",
+      "location": "Marktplatz 1, Musterstadt",
       "url": "",
       "pokemon": [
         "Rayquaza"

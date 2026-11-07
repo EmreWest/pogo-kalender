@@ -73,7 +73,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "include_types": [],
         "exclude_types": ["go-battle-league", "season", "update"],
         # Types with local in-person editions (Sendai, Los Angeles, …): only the
-        # global edition is relevant for players in Augsburg.
+        # global edition is relevant for most players.
         "global_only_types": ["wild-area", "pokemon-go-tour", "pokemon-go-fest"],
         "include_keywords": [],
         "exclude_keywords": [],

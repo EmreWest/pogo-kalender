@@ -1,9 +1,9 @@
-# Pokémon-GO-Kalender mit Discord-Worker für G47IX-Infografiken.
+# Pokémon-GO-Eventkalender mit optionalem Discord-Worker für Infografiken.
 #
-# WICHTIG: Diese Datei im selben Ordner wie bisher verwenden. Docker benennt
-# das Volume nach dem Ordner (<ordner>_scrapedduck_ical_data). Service-Name
-# und Volume-Schlüssel sind unverändert, damit das bestehende Volume mit
-# manuellen Events, Bildern und Caches weiterverwendet wird.
+# Docker benennt das Volume nach dem Ordner, in dem diese Datei liegt
+# (<ordner>_scrapedduck_ical_data). Bei einem Umzug den Ordnernamen
+# beibehalten oder das Volume mitnehmen, sonst startet der Kalender mit
+# leeren Daten (eigene Events, Bild-Caches, Infografiken).
 #
 # Geheimnisse (Admin-Passwort, Discord-Token, IDs) stehen in der .env im
 # selben Ordner – Vorlage: .env.example.

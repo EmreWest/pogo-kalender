@@ -1,6 +1,6 @@
 """Local OCR for infographics using the Tesseract command line tool.
 
-Galix' infographics combine light text on dark backgrounds with dark text on
+Typical event infographics combine light text on dark backgrounds with dark text on
 light boxes. A single Tesseract pass misses parts of either, so two passes
 are combined: the original image, and an enlarged, inverted black-and-white
 version. Pillow is only needed for the second pass; without it the first pass
