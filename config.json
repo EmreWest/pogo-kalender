@@ -27,9 +27,15 @@
       "pokemon-go-tour",
       "event",
       "max-battles",
-      "max-mondays"
+      "max-mondays",
+      "wild-area"
     ],
     "exclude_types": [],
+    "global_only_types": [
+      "wild-area",
+      "pokemon-go-tour",
+      "pokemon-go-fest"
+    ],
     "include_keywords": [],
     "exclude_keywords": [
       "go battle league"

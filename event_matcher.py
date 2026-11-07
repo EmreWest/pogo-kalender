@@ -77,6 +77,7 @@ TYPE_KEYWORDS: list[tuple[str, tuple[str, ...]]] = [
     ("limited-research", ("limited research", "befristete forschung")),
     ("pokemon-go-fest", ("go fest", "go-fest")),
     ("pokemon-go-tour", ("go tour", "go-tour")),
+    ("wild-area", ("wild area", "naturzone")),
     ("raid-battles", ("raid", "schwäche", "weakness", "trainer benötigt", "trainers recommended", "konter", "counters")),
     ("max-battles", ("max battle", "dyna-kampf", "dyna-kämpfe", "dynamax", "gigantamax", "gigadynamax", "dyna-")),
 ]
@@ -274,6 +275,7 @@ class EventProfile:
     is_manual: bool
     pokemon_ids: set[int]
     title_words: set[str]
+    title_variants: tuple[set[str], ...] = ()
 
     @property
     def start_date(self) -> date:
@@ -307,10 +309,13 @@ def build_profile(event: dict[str, Any], local_tz: tzinfo, species_lookup: Speci
         word for species in species_lookup(f"{title} {source_title}")
         for word in extract_words(f"{species.get('english', '')} {species.get('german', '')}")
     }
-    words = {
-        word for word in (extract_words(title) | extract_words(source_title)) - STOPWORDS - pokemon_name_words
-        if not _is_type_word(word)
-    }
+    def significant(text: str) -> set[str]:
+        return {word for word in extract_words(text) - STOPWORDS - pokemon_name_words if not _is_type_word(word)}
+
+    # German and English titles are scored separately: a German infographic
+    # should not lose points because the English words are missing.
+    variants = tuple(variant for variant in (significant(title), significant(source_title)) if variant)
+    words = set().union(*variants) if variants else set()
     return EventProfile(
         event_id=str(event.get("id") or ""),
         title=title,
@@ -321,6 +326,7 @@ def build_profile(event: dict[str, Any], local_tz: tzinfo, species_lookup: Speci
         is_manual=bool(event.get("isManual")),
         pokemon_ids=pokemon_ids,
         title_words=words,
+        title_variants=variants,
     )
 
 
@@ -413,11 +419,13 @@ def score_event(
             reasons.append("anderer Eventtyp")
 
     # 5. Title words
-    if profile.title_words:
-        found = [word for word in profile.title_words if _word_found(word, features.words, glossary)]
-        if found:
-            parts["title"] = round(20 * len(found) / len(profile.title_words))
-            reasons.append("Titel ähnlich")
+    best_ratio = 0.0
+    for variant in profile.title_variants or ((profile.title_words,) if profile.title_words else ()):
+        found = [word for word in variant if _word_found(word, features.words, glossary)]
+        best_ratio = max(best_ratio, len(found) / len(variant))
+    if best_ratio > 0:
+        parts["title"] = round(20 * best_ratio)
+        reasons.append("Titel ähnlich")
 
     # 6. Posting time
     if posted_at > profile.end + timedelta(days=1):

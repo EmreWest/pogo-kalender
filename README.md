@@ -343,6 +343,12 @@ Ausschnitt aus der `config.json` (alle Werte haben Standardwerte):
 - `"ocr": {"enabled": false}` schaltet nur die Texterkennung ab. Dann wird nur der Nachrichtentext ausgewertet.
 - Weitere Optionen: `allowed_download_hosts`, `include_embed_images`, `download_timeout_seconds`, `matching.max_candidates`, `matching.title_glossary`.
 
+### Eventarten und Filter
+
+Welche ScrapedDuck-Eventarten im Kalender landen, steht unter `filters.include_types`. Die GO Naturzone (GO Wild Area) heißt dort `wild-area`. Weitere Arten, die standardmäßig fehlen, sind `timed-research`, `research`, `go-pass` und `season`.
+
+`filters.global_only_types` (Standard: `wild-area`, `pokemon-go-tour`, `pokemon-go-fest`) zeigt bei diesen Arten nur die globale Ausgabe. Lokale Vor-Ort-Ausgaben wie „Wild Area: Sendai“ oder „Tour: Los Angeles“ werden ausgeblendet.
+
 Änderungen an der `config.json` greifen im Webserver sofort. Den Worker danach neu starten.
 
 ## HAProxy und Cloudflare

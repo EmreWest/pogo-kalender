@@ -92,6 +92,11 @@ class InfographicManager:
             return False
         if matching.get("needs_rematch"):
             return True
+        category = item.get("category") or {}
+        if status == "matched" and category.get("value") == "news" and category.get("method") == "auto":
+            # News is only a fallback: keep checking whether an event appears
+            # in the calendar later (e.g. once LeekDuck lists it).
+            return True
         if status == "matched":
             # Keep automatic matches stable. A matched event that dropped out
             # of the calendar window (past event) keeps its infographic.

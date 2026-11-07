@@ -381,3 +381,50 @@ class FeaturedTest(WebBase):
         self.client.json("POST", f"/api/admin/infographics/{record_id}/category", {"category": "event"})
         self.assertEqual(self.featured()["news"], [])
         self.assertEqual(self.client.json("POST", f"/api/admin/infographics/{record_id}/category", {"category": "quatsch"})[0], 400)
+
+
+class FilterTest(unittest.TestCase):
+    def test_only_global_edition_of_wild_area_and_tour(self) -> None:
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        config = app.deep_merge(app.DEFAULT_CONFIG, {"filters": {"include_types": ["wild-area", "pokemon-go-tour", "event"], "future_days": 3650, "past_days": 3650}})
+        now = datetime(2026, 11, 7, 9, 0, tzinfo=ZoneInfo("Europe/Berlin"))
+        def event(name, event_type):
+            return {"name": name, "eventType": event_type, "start": "2026-11-14T10:00:00.000", "end": "2026-11-15T18:00:00.000"}
+        self.assertTrue(app.event_matches(event("Pokémon GO Wild Area 2026: Global", "wild-area"), config, now))
+        self.assertFalse(app.event_matches(event("Pokémon GO Wild Area 2026: Sendai • Tohoku", "wild-area"), config, now))
+        self.assertFalse(app.event_matches(event("Pokémon GO Tour: Alola - Los Angeles 2027", "pokemon-go-tour"), config, now))
+        self.assertTrue(app.event_matches(event("Pokémon GO Tour: Alola - Global 2027", "pokemon-go-tour"), config, now))
+        self.assertTrue(app.event_matches(event("Into the Wild", "event"), config, now))
+        self.assertEqual(app.translate_text("Pokémon GO Wild Area 2026: Global", config, {}, None), "Pokémon GO Naturzone 2026: Global")
+
+
+class NewsFallbackTest(WebBase):
+    def test_news_moves_to_event_once_event_appears(self) -> None:
+        from datetime import datetime, timedelta, timezone
+
+        posted = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+        record_id = self.seed("1300000000000002400", ocr_text="GO Naturzone\n14. NOV - 15. NOV\nGlobal\nUpdate", posted=posted)
+        status, payload = self.client.json("GET", "/api/events")
+        self.assertEqual(self.store.get(record_id)["category"]["value"], "news")
+
+        wild_area = {
+            "eventID": "pokemon-go-wild-area-2026-global",
+            "name": "Pokémon GO Wild Area 2026: Global",
+            "eventType": "wild-area",
+            "heading": "Wild Area",
+            "link": "https://leekduck.com/events/pokemon-go-wild-area-2026-global/",
+            "start": "2026-11-14T10:00:00.000",
+            "end": "2026-11-15T18:00:00.000",
+        }
+        app.fetch_events = lambda config: [dict(event) for event in SOURCE_EVENTS + [wild_area]]
+        try:
+            app.invalidate_calendar_cache()
+            events = self.api_events()
+        finally:
+            app.fetch_events = lambda config: [dict(event) for event in SOURCE_EVENTS]
+        stored = self.store.get(record_id)
+        self.assertEqual(stored["category"]["value"], "event")
+        self.assertEqual(stored["matching"]["event_id"], "pokemon-go-wild-area-2026-global")
+        self.assertEqual(events["pokemon-go-wild-area-2026-global"]["infographics"][0]["id"], record_id)

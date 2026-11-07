@@ -69,6 +69,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "filters": {
         "include_types": [],
         "exclude_types": ["go-battle-league", "season", "update"],
+        # Types with local in-person editions (Sendai, Los Angeles, …): only the
+        # global edition is relevant for players in Augsburg.
+        "global_only_types": ["wild-area", "pokemon-go-tour", "pokemon-go-fest"],
         "include_keywords": [],
         "exclude_keywords": [],
         "require_spawns": None,
@@ -149,6 +152,8 @@ DEFAULT_ADMIN_PASSWORD = "CHANGE-ME-NOW-2026!"
 INFOGRAPHICS = InfographicManager()
 
 DEFAULT_PHRASE_TRANSLATIONS: dict[str, str] = {
+    "Pokémon GO Wild Area": "Pokémon GO Naturzone",
+    "GO Wild Area": "GO Naturzone",
     "Pokémon Spotlight Hour": "Pokémon-Rampenlichtstunde",
     " Spotlight Hour": "-Rampenlichtstunde",
     "Spotlight Hour": "Rampenlichtstunde",
@@ -202,6 +207,11 @@ EVENT_TYPE_LABELS: dict[str, str] = {
     "limited-research": "Befristete Forschung",
     "pokemon-go-fest": "Pokémon GO Fest",
     "pokemon-go-tour": "Pokémon GO Tour",
+    "wild-area": "GO Naturzone",
+    "timed-research": "Zeitlich begrenzte Forschung",
+    "research": "Forschung",
+    "go-pass": "GO-Pass",
+    "season": "Saison",
     "max-battles": "Dyna-Kämpfe",
     "max-mondays": "Dyna-Montag",
     "go-battle-league": "GO-Kampfliga",
@@ -1105,6 +1115,9 @@ def event_matches(event: dict[str, Any], config: dict[str, Any], now_local: date
     if include_types and event_type not in include_types:
         return False
     if event_type in exclude_types:
+        return False
+    global_only = set(normalized_string_list(filters.get("global_only_types")))
+    if event_type in global_only and "global" not in str(event.get("name") or "").casefold():
         return False
 
     searchable = " ".join(
