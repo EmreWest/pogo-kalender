@@ -77,7 +77,7 @@ class Client:
         return status, json.loads(payload.decode("utf-8")) if payload else None
 
     def login(self) -> None:
-        status, headers, payload = self.request("POST", "/api/admin/login", {"password": helpers.TEST_PASSWORD})
+        status, headers, payload = self.request("POST", "/api/admin/login", {"username": "admin", "password": helpers.TEST_PASSWORD})
         assert status == 200, payload
         self.cookie = headers["Set-Cookie"].split(";", 1)[0]
         self.csrf = json.loads(payload)["csrf"]
@@ -306,12 +306,29 @@ class WebTest(WebBase):
 
         os.environ["ADMIN_PASSWORD"] = "aus-der-env-datei"
         try:
-            status, _ = self.client.json("POST", "/api/admin/login", {"password": helpers.TEST_PASSWORD})
+            status, _ = self.client.json("POST", "/api/admin/login", {"username": "admin", "password": helpers.TEST_PASSWORD})
             self.assertEqual(status, 401)
-            status, _ = self.client.json("POST", "/api/admin/login", {"password": "aus-der-env-datei"})
+            status, _ = self.client.json("POST", "/api/admin/login", {"username": "admin", "password": "aus-der-env-datei"})
             self.assertEqual(status, 200)
         finally:
             os.environ.pop("ADMIN_PASSWORD", None)
+
+    def test_admin_username(self) -> None:
+        import os
+
+        login = lambda user: self.client.json("POST", "/api/admin/login", {"username": user, "password": helpers.TEST_PASSWORD})[0]
+        self.assertEqual(login("admin"), 200)
+        self.assertEqual(login(" Admin "), 200)  # case and spaces from mobile keyboards
+        self.assertEqual(login(""), 401)
+        self.assertEqual(login("jemand"), 401)
+        os.environ["ADMIN_USERNAME"] = "Trainer"
+        try:
+            self.assertEqual(login("admin"), 401)
+            self.assertEqual(login("trainer"), 200)
+        finally:
+            os.environ.pop("ADMIN_USERNAME", None)
+        with app.LOGIN_ATTEMPTS_LOCK:
+            app.LOGIN_ATTEMPTS.clear()
 
 
 if __name__ == "__main__":

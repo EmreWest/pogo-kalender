@@ -20,6 +20,7 @@ services:
       CONFIG_FILE: /config/config.json
       PORT: "8080"
       LOG_LEVEL: INFO
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
     volumes:
       - ./config.json:/config/config.json:ro

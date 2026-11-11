@@ -110,6 +110,7 @@ Geheimnisse gehören in die `.env` (Vorlage: `.env.example`):
 
 | Variable | Bedeutung |
 | --- | --- |
+| `ADMIN_USERNAME` | optional: Benutzername für den Admin, Standard `admin` |
 | `ADMIN_PASSWORD` | Admin-Passwort, hat Vorrang vor `manual_events.admin_password` |
 | `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `DISCORD_CHANNEL_IDS`, `DISCORD_ALLOWED_AUTHOR_IDS` | nur für die Discord-Infografiken |
 
@@ -127,7 +128,7 @@ Geheimnisse gehören in die `.env` (Vorlage: `.env.example`):
 
 ## Adminbereich und eigene Events
 
-Der Login unter `/admin` braucht nur ein Passwort: `ADMIN_PASSWORD` aus der `.env` oder `manual_events.admin_password` aus der `config.json`. Solange das mitgelieferte Platzhalter-Passwort aktiv ist, zeigt die Seite eine Warnung.
+Der Login unter `/admin` erfolgt mit Benutzername und Passwort. Der Benutzername ist `admin`, sofern nicht über `ADMIN_USERNAME` in der `.env` oder `manual_events.admin_username` in der `config.json` ein anderer gesetzt ist (Groß- und Kleinschreibung egal). Das Passwort kommt aus `ADMIN_PASSWORD` in der `.env` oder `manual_events.admin_password` in der `config.json`. Solange das mitgelieferte Platzhalter-Passwort aktiv ist, zeigt die Seite eine Warnung.
 
 Sicherheit:
 - Sitzungs-Cookie mit `HttpOnly`, `SameSite=Strict` und standardmäßig `Secure`, deshalb `/admin` über HTTPS öffnen. Nur für einen rein lokalen Test über HTTP kann `manual_events.secure_cookie` vorübergehend auf `false` gesetzt werden.

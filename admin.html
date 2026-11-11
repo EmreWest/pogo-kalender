@@ -198,11 +198,14 @@
       <article class="panel login-card">
         <img class="login-icon" src="/favicon.svg" alt="" width="68" height="68">
         <h2>Anmelden</h2>
-        <p>Für diesen Bereich ist nur das Admin-Passwort erforderlich (<code>ADMIN_PASSWORD</code> oder <code>config.json</code>).</p>
         <form class="login-form" id="login-form">
           <label class="field">
+            <span>Benutzername</span>
+            <input id="username" name="username" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required autofocus>
+          </label>
+          <label class="field">
             <span>Passwort</span>
-            <input id="password" type="password" autocomplete="current-password" required autofocus>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
           </label>
           <button class="button" id="login-button" type="submit">Anmelden</button>
         </form>
@@ -816,7 +819,7 @@
       errorElement.textContent = "";
       try {
         const session = await request("/api/admin/login", {
-          method: "POST", body: JSON.stringify({ password: document.getElementById("password").value })
+          method: "POST", body: JSON.stringify({ username: document.getElementById("username").value, password: document.getElementById("password").value })
         });
         document.getElementById("password").value = "";
         showDashboard(session);

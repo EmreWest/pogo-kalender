@@ -567,6 +567,14 @@ def invalidate_calendar_cache() -> None:
         CACHE["created_monotonic"] = float("-inf")
 
 
+def admin_username(config: dict[str, Any]) -> str:
+    # Optional: ADMIN_USERNAME (environment / .env) or manual_events.admin_username, otherwise "admin".
+    from_env = os.environ.get("ADMIN_USERNAME", "").strip()
+    if from_env:
+        return from_env
+    return str(manual_config(config).get("admin_username") or "").strip() or "admin"
+
+
 def admin_password(config: dict[str, Any]) -> str:
     # ADMIN_PASSWORD (environment / .env) takes precedence, so the password
     # does not have to live in config.json.
@@ -2095,10 +2103,14 @@ class CalendarHandler(BaseHTTPRequestHandler):
                 self.send_json(400, {"error": str(exc)}, {"Cache-Control": "no-store"})
                 return
             supplied = str(payload.get("password") or "")
-            if not hmac.compare_digest(supplied.encode("utf-8"), admin_password(config).encode("utf-8")):
+            supplied_user = str(payload.get("username") or "").strip().casefold()
+            # Both comparisons always run, so the response time reveals nothing.
+            user_ok = hmac.compare_digest(supplied_user.encode("utf-8"), admin_username(config).casefold().encode("utf-8"))
+            password_ok = hmac.compare_digest(supplied.encode("utf-8"), admin_password(config).encode("utf-8"))
+            if not (user_ok and password_ok):
                 record_login_failure(ip)
                 time.sleep(0.35)
-                self.send_json(401, {"error": "Passwort ist nicht korrekt."}, {"Cache-Control": "no-store"})
+                self.send_json(401, {"error": "Benutzername oder Passwort ist nicht korrekt."}, {"Cache-Control": "no-store"})
                 return
             clear_login_failures(ip)
             token, session = create_admin_session(config)
