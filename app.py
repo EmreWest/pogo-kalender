@@ -25,6 +25,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlsplit
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+import campfire
 import hub
 import infographic_store
 import locations
@@ -99,7 +100,7 @@ STATIC_ASSETS = {
     "/icon-512.png": (Path("/app/icon-512.png"), "image/png"),
     "/site.webmanifest": (Path("/app/site.webmanifest"), "application/manifest+json; charset=utf-8"),
 }
-SERVICE_VERSION = "1.8.0"
+SERVICE_VERSION = "1.9.0"
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 
 logging.basicConfig(
@@ -2085,6 +2086,29 @@ class CalendarHandler(BaseHTTPRequestHandler):
             except Exception as exc:
                 LOGGER.exception("Manuelles Event konnte nicht gespeichert werden")
                 self.send_json(500, {"error": str(exc)}, {"Cache-Control": "no-store"})
+            return
+
+        if path == "/api/admin/campfire":
+            if not self.require_admin(require_csrf=True):
+                return
+            headers = {"Cache-Control": "no-store"}
+            try:
+                payload = self.read_json_body(8192)
+                meetup = campfire.fetch_meetup(str(payload.get("url") or ""))
+            except ValueError as exc:
+                self.send_json(400, {"error": str(exc)}, headers)
+                return
+            except Exception as exc:
+                LOGGER.warning("Campfire-Import fehlgeschlagen: %s", exc)
+                self.send_json(502, {"error": str(exc)}, headers)
+                return
+            existing = next(
+                (event for event in load_manual_events(config)
+                 if meetup["id"] in str(event.get("url") or "").casefold()),
+                None,
+            )
+            meetup["existingEventId"] = str(existing.get("id")) if existing else None
+            self.send_json(200, {"meetup": meetup}, headers)
             return
 
         if path.startswith("/api/admin/infographics/"):

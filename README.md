@@ -135,6 +135,8 @@ Sicherheit:
 
 Eigene Events haben Titel, Eventtyp, ganztägig oder Start/Ende, Beschreibung, Ort, Link und optional Pokémon für Bilder (deutsche und englische Namen, auch mit Zusätzen wie „Mega“ oder „Dynamax“). Vordefinierte Typen sind `manual-event`, `manual-meetup`, `manual-raid` und `manual-reminder`, eigene Typen aus Kleinbuchstaben, Zahlen und Bindestrichen sind möglich.
 
+Campfire-Meetups lassen sich per Link übernehmen: Teilen-Link (`https://cmpf.re/…`) oder den ganzen Teilen-Text in das Feld „Aus Campfire übernehmen“ einfügen. Der Server ruft die öffentliche Meetup-Seite ab und übernimmt Titel, Beschreibung und Link, Datum, Uhrzeit und Ort werden von Hand ergänzt. Ist das Meetup schon eingetragen, weist der Admin darauf hin. Im Kalender erscheint der Link als „In Campfire öffnen“.
+
 Gespeichert wird atomar in `/data/manual-events.json`. Bei ganztägigen Events ist das Ende wie in iCal üblich exklusiv: Ein Event nur am 22. August steht als `"start": "2026-08-22", "end": "2026-08-23"` in der Datei. Ein Beispiel liegt in `manual-events.example.json`.
 
 ## Eventarten und Filter
@@ -329,7 +331,7 @@ Der Webserver lauscht auf Port 8080 und braucht keinen eigenen Reverse Proxy. F�
 
 Die Client-IP für Login-Begrenzung und Abruflimits liest der Dienst aus `CF-Connecting-IP`, `X-Forwarded-For` oder `X-Real-IP`.
 
-Ausgehend braucht der Webserver HTTPS-Zugriff auf `raw.githubusercontent.com`, `cdn.leekduck.com`, `api.open-meteo.com` und `geocoding-api.open-meteo.com`, der Discord-Worker auf `discord.com` und `cdn.discordapp.com`.
+Ausgehend braucht der Webserver HTTPS-Zugriff auf `raw.githubusercontent.com`, `cdn.leekduck.com`, `api.open-meteo.com` und `geocoding-api.open-meteo.com` (für den Campfire-Import zusätzlich `cmpf.re` und `campfire.scopely.com`), der Discord-Worker auf `discord.com` und `cdn.discordapp.com`.
 
 ## Backup und Wiederherstellung
 

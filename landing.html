@@ -2384,7 +2384,7 @@
       const link = document.getElementById("modal-link");
       link.hidden = !event.url;
       link.href = event.url || "#";
-      link.textContent = event.isManual ? "Weiterführenden Link öffnen" : "Details bei LeekDuck";
+      link.textContent = /^https:\/\/(cmpf\.re|campfire\.(scopely|nianticlabs)\.com)\//.test(event.url || "") ? "In Campfire öffnen" : event.isManual ? "Weiterführenden Link öffnen" : "Details bei LeekDuck";
       document.getElementById("modal").classList.add("open");
       document.body.style.overflow = "hidden";
     }
