@@ -357,6 +357,7 @@
     }
 
     .pokemon-thumb + .pokemon-thumb { margin-left: -9px; }
+    .pokemon-thumb.event-thumb { object-fit: cover; object-position: center; background: #e2e8f0; }
 
     .pokemon-more {
       display: inline-flex;
@@ -1928,14 +1929,22 @@
       return Array.isArray(event.pokemonImages) ? event.pokemonImages.filter(image => image && image.url) : [];
     }
 
-    function createPokemonThumbs(event, maxImages = 1, className = "") {
+    // Small round images: Pokémon first, otherwise the LeekDuck event image.
+    // The detail view keeps showing Pokémon only.
+    function thumbImages(event) {
       const images = pokemonImages(event);
+      if (images.length || !event.eventImage) return images;
+      return [{ url: event.eventImage, name: event.title || "Event", banner: true }];
+    }
+
+    function createPokemonThumbs(event, maxImages = 1, className = "") {
+      const images = thumbImages(event);
       if (!images.length) return null;
       const wrapper = document.createElement("span");
       wrapper.className = `pokemon-thumbs ${className}`.trim();
       for (const image of images.slice(0, maxImages)) {
         const img = document.createElement("img");
-        img.className = "pokemon-thumb";
+        img.className = image.banner ? "pokemon-thumb event-thumb" : "pokemon-thumb";
         img.src = image.url;
         img.alt = image.name || "Pokémon";
         img.loading = "lazy";
@@ -2304,7 +2313,7 @@
           button.className = "list-event";
           applyEventColors(button, event.eventType);
 
-          const listImages = pokemonImages(event);
+          const listImages = thumbImages(event);
           if (listImages.length) {
             button.classList.add("has-images");
             const media = createPokemonThumbs(event, 1, "list-pokemon");

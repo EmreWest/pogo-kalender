@@ -969,6 +969,14 @@ def register_image_source(url: str, name: str) -> str | None:
     return f"/pokemon-image/{key}"
 
 
+def event_image_url(event: dict[str, Any], config: dict[str, Any], name: str) -> str | None:
+    """LeekDuck event banner, served through the local image cache like Pokémon images."""
+    image_config = config.get("pokemon_images") or {}
+    if not isinstance(image_config, dict) or not image_config.get("enabled", True) or not image_config.get("event_images", True):
+        return None
+    return register_image_source(str(event.get("image") or ""), name)
+
+
 def official_artwork_url(species_id: int) -> str:
     return (
         "https://raw.githubusercontent.com/PokeAPI/sprites/master/"
@@ -1451,6 +1459,7 @@ def create_calendar(
             "eventType": event_type,
             "group": event_group(event_type),
             "pokemonImages": pokemon_images,
+            "eventImage": event_image_url(event, config, name),
             "allDay": False,
             "isManual": False,
             "location": "",

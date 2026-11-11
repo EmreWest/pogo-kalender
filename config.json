@@ -58,7 +58,8 @@
     "cache_seconds": 2592000,
     "max_image_bytes": 5242880,
     "max_per_event": 3,
-    "use_scrapedduck_images": true
+    "use_scrapedduck_images": true,
+    "event_images": true
   },
   "manual_events": {
     "enabled": true,

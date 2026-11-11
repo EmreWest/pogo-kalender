@@ -45,6 +45,7 @@ SOURCE_EVENTS = [
         "eventType": "event",
         "heading": "Event",
         "link": "https://leekduck.com/events/twilight-wishes-2026/",
+        "image": "https://cdn.leekduck.com/assets/img/events/twilight-wishes-2026.jpg",
         "start": "2026-11-24T10:00:00.000",
         "end": "2026-11-30T20:00:00.000",
     },
@@ -155,6 +156,8 @@ class WebTest(WebBase):
         self.assertNotIn("infographic", text.casefold())
         events = self.api_events()
         self.assertEqual(len(events), 3)
+        twilight = next(event for event in events.values() if event["sourceTitle"] == "Twilight Wishes")
+        self.assertRegex(twilight["eventImage"] or "", r"^/pokemon-image/[0-9a-f]{40}$")
         for path in ("/status", "/admin"):
             self.assertEqual(self.client.request("GET", path)[0], 200, path)
         status, health = self.client.json("GET", "/health")

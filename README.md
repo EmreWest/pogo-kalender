@@ -101,7 +101,7 @@ Die `config.json` wird bei jedem Zugriff neu gelesen. Änderungen greifen im Web
 | `cache_seconds` | wie lange die ScrapedDuck-Daten zwischengespeichert werden (Standard 1800) |
 | `filters` | welche Events im Kalender landen, siehe [Eventarten und Filter](#eventarten-und-filter) |
 | `translations` | Übersetzung von Titeln und Pokémon-Namen, eigene Ersetzungen über `manual_phrases` |
-| `pokemon_images` | Pokémon-Bilder für Raids und Dyna-Kämpfe |
+| `pokemon_images` | Pokémon-Bilder für Raids und Dyna-Kämpfe; mit `event_images` (Standard `true`) zeigen Events ohne Pokémon das LeekDuck-Eventbild im runden Vorschaubild |
 | `manual_events` | eigene Events und Admin-Login |
 | `hub` | Ansicht „Aktuell“ und Wetter-Standardort |
 | `infographics` | Discord-Infografiken |
