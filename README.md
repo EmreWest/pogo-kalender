@@ -134,12 +134,11 @@ Sicherheit:
 - Sitzungs-Cookie mit `HttpOnly`, `SameSite=Strict` und standardmäßig `Secure`, deshalb `/admin` über HTTPS öffnen. Nur für einen rein lokalen Test über HTTP kann `manual_events.secure_cookie` vorübergehend auf `false` gesetzt werden.
 - CSRF-Token für alle schreibenden Anfragen, konstanter Passwortvergleich, Begrenzung fehlgeschlagener Logins, zeitlich begrenzte Sitzungen im Arbeitsspeicher (ein Neustart beendet sie), `Cache-Control: no-store`
 
-Eigene Events haben Titel, Eventtyp, ganztägig oder Start/Ende, Beschreibung, Ort, Link und optional Pokémon für Bilder (deutsche und englische Namen, auch mit Zusätzen wie „Mega“ oder „Dynamax“). Vordefinierte Typen sind `manual-event`, `manual-meetup`, `manual-raid` und `manual-reminder`, eigene Typen aus Kleinbuchstaben, Zahlen und Bindestrichen sind möglich.
+Eigene Events haben Titel, Eventtyp, ganztägig oder Start/Ende, Beschreibung, Ort, Link und optional Pokémon für Bilder (deutsche und englische Namen, auch mit Zusätzen wie „Mega“ oder „Dynamax“). Vordefinierte Typen sind `manual-event`, `manual-meetup`, `campfire-meetup`, `manual-raid` und `manual-reminder`, eigene Typen aus Kleinbuchstaben, Zahlen und Bindestrichen sind möglich.
 
-Campfire-Meetups lassen sich im Feld „Aus Campfire übernehmen“ importieren:
-- Link: Teilen-Link (`https://cmpf.re/…`) oder den ganzen Teilen-Text einfügen. Der Server ruft die öffentliche Meetup-Seite ab und übernimmt Titel, Beschreibung und Link. Datum, Uhrzeit und Ort stehen dort nicht.
-- Screenshot: Ein Screenshot des Meetups aus der Campfire-App (Deutsch oder Englisch) liefert per Texterkennung Datum, Uhrzeit und Ort, ohne Link auch Titel und Beschreibung. Am Desktop kann der Screenshot auch mit Strg+V bzw. Cmd+V in das Linkfeld eingefügt werden. Das Bild wird nur ausgelesen und nicht gespeichert.
-- Am besten beides zusammen übergeben. Die Werte landen im Formular und werden vor dem Speichern geprüft. Ist das Meetup schon eingetragen, weist der Admin darauf hin. Im Kalender erscheint der Link als „In Campfire öffnen“.
+Campfire-Meetups lassen sich per Screenshot übernehmen: Im Bereich „Campfire-Screenshot“ einen Screenshot des Meetups aus der Campfire-App hochladen, am Desktop auch mit Strg+V bzw. Cmd+V einfügen. Die Texterkennung liest Titel, Beschreibung, Datum, Uhrzeit, Ort und Koordinaten (deutsche oder englische App-Sprache) und trägt sie direkt ins Formular ein, der Eventtyp wird `campfire-meetup`. „Entfernen“ nimmt die übernommenen Werte wieder heraus, solange sie nicht bearbeitet wurden. Das Bild wird nur ausgelesen und nicht gespeichert. Ist das Meetup schon eingetragen, weist der Admin darauf hin.
+
+Ort und Koordinaten machen den Treffpunkt navigierbar: Die Detailansicht im Webkalender zeigt „Route zum Treffpunkt“ (Apple Karten auf Apple-Geräten, sonst Google Maps). Im Kalender-Abo stehen der Ort als `LOCATION`, die Koordinaten als `GEO` und als Kartenpunkt für Apple Kalender sowie ein Routen-Link in der Beschreibung. Ohne Koordinaten führt die Route zur Adresse.
 
 Gespeichert wird atomar in `/data/manual-events.json`. Bei ganztägigen Events ist das Ende wie in iCal üblich exklusiv: Ein Event nur am 22. August steht als `"start": "2026-08-22", "end": "2026-08-23"` in der Datei. Ein Beispiel liegt in `manual-events.example.json`.
 
@@ -335,7 +334,7 @@ Der Webserver lauscht auf Port 8080 und braucht keinen eigenen Reverse Proxy. F�
 
 Die Client-IP für Login-Begrenzung und Abruflimits liest der Dienst aus `CF-Connecting-IP`, `X-Forwarded-For` oder `X-Real-IP`.
 
-Ausgehend braucht der Webserver HTTPS-Zugriff auf `raw.githubusercontent.com`, `cdn.leekduck.com`, `api.open-meteo.com` und `geocoding-api.open-meteo.com` (für den Campfire-Import zusätzlich `cmpf.re` und `campfire.scopely.com`), der Discord-Worker auf `discord.com` und `cdn.discordapp.com`.
+Ausgehend braucht der Webserver HTTPS-Zugriff auf `raw.githubusercontent.com`, `cdn.leekduck.com`, `api.open-meteo.com` und `geocoding-api.open-meteo.com`, der Discord-Worker auf `discord.com` und `cdn.discordapp.com`.
 
 ## Backup und Wiederherstellung
 

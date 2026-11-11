@@ -97,11 +97,14 @@
     .notice[hidden] { display: none; }
     .flash { min-height: 22px; margin-top: 12px; text-align: center; color: var(--danger); font-size: .84rem; font-weight: 700; }
     .dashboard[hidden], .login-wrap[hidden] { display: none; }
-    .dashboard-grid { display: grid; grid-template-columns: minmax(320px, .86fr) minmax(380px, 1.14fr); gap: 20px; align-items: start; }
+    .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+    .dashboard-grid > * { min-width: 0; }
     .section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
     .section-head h2 { margin: 0; font-size: 1.2rem; }
     .section-head p { margin: 5px 0 0; color: var(--muted); font-size: .82rem; line-height: 1.45; }
-    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    #event-form { container-type: inline-size; }
+    .form-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
+    .form-grid input { min-width: 0; max-width: 100%; }
     .span-2 { grid-column: 1 / -1; }
     .checkbox-row {
       display: flex; align-items: center; gap: 10px; padding: 10px 12px;
@@ -111,12 +114,17 @@
     .checkbox-row span { color: var(--text); }
     .form-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
     .hint { color: var(--muted); font-size: .72rem; line-height: 1.45; }
-    .import-box { margin-bottom: 16px; padding: 12px; border: 1px dashed var(--line); border-radius: 13px; background: var(--surface-2); }
-    .import-row { display: flex; gap: 8px; margin-top: 6px; }
-    .import-row input { flex: 1 1 auto; min-width: 0; }
-    .import-box .status-line { margin-top: 8px; min-height: 0; }
-    .import-row .hint { align-self: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 auto; }
-    .file-button { display: inline-flex; align-items: center; cursor: pointer; flex: 0 0 auto; }
+    .import-box { display: grid; gap: 8px; margin-bottom: 16px; padding: 12px; border: 1px dashed var(--line); border-radius: 13px; background: var(--surface-2); }
+    .import-title { font-size: .78rem; font-weight: 800; color: var(--muted); }
+    .import-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .import-preview { width: 44px; height: 64px; object-fit: cover; object-position: top; border-radius: 8px; border: 1px solid var(--line); flex: 0 0 auto; }
+    .import-preview[hidden] { display: none; }
+    .import-name { flex: 1 1 120px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: .76rem; }
+    .import-box .status-line { margin-top: 0; min-height: 0; }
+    .import-box .status-line:empty { display: none; }
+    .file-button { cursor: pointer; flex: 0 0 auto; }
+    .file-button.busy { opacity: .55; pointer-events: none; }
+    .button[hidden] { display: none; }
     .events-list { display: grid; gap: 11px; }
     .events-empty { color: var(--muted); text-align: center; padding: 42px 14px; border: 1px dashed var(--line); border-radius: 14px; }
     .event-card { border: 1px solid var(--line); border-radius: 15px; background: var(--surface-2); padding: 15px; }
@@ -136,11 +144,11 @@
     .worker-line.error { color: var(--danger); }
     .infographic-list { display: grid; gap: 12px; }
     .infographic-card {
-      display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px;
+      display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px;
       border: 1px solid var(--line); border-radius: 15px; background: var(--surface-2); padding: 14px;
     }
     .infographic-thumb {
-      display: block; width: 150px; aspect-ratio: 1 / 1; border-radius: 11px; overflow: hidden;
+      display: block; width: 100%; max-width: 320px; aspect-ratio: 1 / 1; border-radius: 11px; overflow: hidden;
       background: var(--surface-3); border: 1px solid var(--line);
     }
     .infographic-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -165,16 +173,27 @@
       .topbar { align-items: flex-start; flex-direction: column; border-radius: 18px; padding: 20px; }
       .top-actions { width: 100%; justify-content: stretch; }
       .top-actions > * { flex: 1; }
-      .dashboard-grid { grid-template-columns: 1fr; }
       .panel { padding: 18px 15px; border-radius: 18px; }
-      .form-grid { grid-template-columns: 1fr; }
-      .span-2 { grid-column: auto; }
       .event-card-head { flex-direction: column; }
       .event-actions { width: 100%; }
       .event-actions .button { flex: 1; }
-      .infographic-card { grid-template-columns: 1fr; }
-      .infographic-thumb { width: 100%; max-width: 320px; }
       .section-head { flex-direction: column; }
+      .head-actions { justify-content: flex-start; }
+      .assign-row { flex-wrap: wrap; }
+      .assign-row select { flex-basis: 100%; }
+    }
+    /* Formularfelder paarweise, sobald das Formular selbst breit genug ist */
+    @container (min-width: 560px) {
+      .form-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    }
+    /* Ab Tablet-Breite: Infografiken mit Vorschau links */
+    @media (min-width: 640px) {
+      .infographic-card { grid-template-columns: 150px minmax(0, 1fr); gap: 16px; }
+      .infographic-thumb { width: 150px; }
+    }
+    /* Ab Desktop-Breite: Formular und gespeicherte Events nebeneinander */
+    @media (min-width: 1100px) {
+      .dashboard-grid { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
     }
   </style>
 </head>
@@ -230,19 +249,16 @@
 
           <form id="event-form">
             <input type="hidden" id="event-id">
-            <div class="import-box field">
-              <span>Aus Campfire übernehmen</span>
+            <div class="import-box">
+              <span class="import-title">Campfire-Screenshot</span>
               <div class="import-row">
-                <input id="campfire-url" maxlength="2000" placeholder="https://cmpf.re/… oder Teilen-Text einfügen" autocomplete="off">
-                <button class="button secondary small" id="campfire-import" type="button">Übernehmen</button>
-              </div>
-              <div class="import-row">
-                <label class="button secondary small file-button" for="campfire-shot">Screenshot wählen</label>
+                <label class="button secondary small file-button" for="campfire-shot" id="campfire-shot-label">Screenshot hochladen</label>
                 <input id="campfire-shot" type="file" accept="image/png,image/jpeg,image/webp" hidden>
-                <span class="hint" id="campfire-shot-name">Kein Screenshot gewählt (auch per Einfügen möglich)</span>
+                <img class="import-preview" id="campfire-preview" alt="Gewählter Screenshot" hidden>
+                <span class="import-name" id="campfire-shot-name">Kein Screenshot gewählt</span>
                 <button class="button secondary small" id="campfire-shot-clear" type="button" hidden>Entfernen</button>
               </div>
-              <small class="hint">Der Link liefert Titel, Beschreibung und Link zum Meetup. Ein Screenshot des Meetups aus der Campfire-App liefert Datum, Uhrzeit und Ort. Beides zusammen ergibt das vollständige Event. Der Screenshot wird nur ausgelesen und nicht gespeichert.</small>
+              <small class="hint">Screenshot eines Meetups aus der Campfire-App hochladen oder einfügen. Titel, Beschreibung, Datum, Uhrzeit, Ort und Koordinaten werden direkt ins Formular übernommen. Das Bild wird nur ausgelesen und nicht gespeichert.</small>
               <div class="status-line" id="campfire-status" role="status"></div>
             </div>
             <div class="form-grid">
@@ -257,6 +273,7 @@
                 <datalist id="event-types">
                   <option value="manual-event">Manuelles Event</option>
                   <option value="manual-meetup">Treffen</option>
+                  <option value="campfire-meetup">Campfire-Meetup</option>
                   <option value="manual-raid">Raid-Treffen</option>
                   <option value="manual-reminder">Erinnerung</option>
                 </datalist>
@@ -282,9 +299,15 @@
                 <textarea id="description" maxlength="5000" placeholder="Hinweise, Treffpunkt oder weitere Informationen"></textarea>
               </label>
 
-              <label class="field">
+              <label class="field span-2">
                 <span>Ort</span>
                 <input id="location" maxlength="300" placeholder="z. B. Marktplatz 1, Musterstadt">
+              </label>
+
+              <label class="field">
+                <span>Koordinaten</span>
+                <input id="coordinates" maxlength="60" inputmode="decimal" placeholder="z. B. 48.366268, 10.894629">
+                <small class="hint">Optional. Damit führt die Navigation im Kalender genau zum Treffpunkt.</small>
               </label>
 
               <label class="field">
@@ -353,6 +376,9 @@
 
   <script>
     const state = { csrf: null, events: [], editingId: null, infographics: null };
+    // Values the last Campfire screenshot put into the form, so "Entfernen" can take them out again.
+    let campfireImported = null;
+    let campfirePreviewUrl = null;
     const loginWrap = document.getElementById("login-wrap");
     const dashboard = document.getElementById("dashboard");
     const logoutButton = document.getElementById("logout");
@@ -439,6 +465,8 @@
       updateDateInputMode(false);
       setStatus("");
       setImportStatus("");
+      campfireImported = null;
+      showCampfireShot(null);
     }
     function payloadFromForm() {
       return {
@@ -449,6 +477,7 @@
         end: document.getElementById("end").value,
         description: document.getElementById("description").value,
         location: document.getElementById("location").value,
+        coordinates: document.getElementById("coordinates").value,
         url: document.getElementById("url").value,
         pokemon: document.getElementById("pokemon").value
       };
@@ -529,6 +558,7 @@
       document.getElementById("type").value = event.type || "manual-event";
       document.getElementById("description").value = event.description || "";
       document.getElementById("location").value = event.location || "";
+      document.getElementById("coordinates").value = Array.isArray(event.geo) ? event.geo.join(", ") : "";
       document.getElementById("url").value = event.url || "";
       document.getElementById("pokemon").value = (event.pokemon || []).join(", ");
       allDay.checked = Boolean(event.all_day);
@@ -835,12 +865,17 @@
       element.textContent = message;
       element.className = `status-line ${kind}`.trim();
     }
-    let campfireShot = null;
-    function setCampfireShot(file) {
-      campfireShot = file || null;
-      document.getElementById("campfire-shot-name").textContent = file ? (file.name || "Screenshot aus der Zwischenablage") : "Kein Screenshot gewählt (auch per Einfügen möglich)";
+    const importFields = ["title", "description", "location", "coordinates", "start", "end", "type"];
+    function showCampfireShot(file) {
+      const preview = document.getElementById("campfire-preview");
+      if (campfirePreviewUrl) URL.revokeObjectURL(campfirePreviewUrl);
+      campfirePreviewUrl = file ? URL.createObjectURL(file) : null;
+      preview.hidden = !file;
+      if (file) preview.src = campfirePreviewUrl; else preview.removeAttribute("src");
+      document.getElementById("campfire-shot-name").textContent = file ? (file.name || "Screenshot aus der Zwischenablage") : "Kein Screenshot gewählt";
       document.getElementById("campfire-shot-clear").hidden = !file;
-      if (!file) document.getElementById("campfire-shot").value = "";
+      document.getElementById("campfire-shot-label").textContent = file ? "Anderen Screenshot" : "Screenshot hochladen";
+      document.getElementById("campfire-shot").value = "";
     }
     function readAsDataUrl(file) {
       return new Promise((resolve, reject) => {
@@ -850,64 +885,80 @@
         reader.readAsDataURL(file);
       });
     }
-    async function importCampfire() {
-      const input = document.getElementById("campfire-url");
-      const button = document.getElementById("campfire-import");
-      if (!input.value.trim() && !campfireShot) { input.focus(); return; }
-      if (campfireShot && campfireShot.size > 15 * 1024 * 1024) { setImportStatus("Der Screenshot ist zu groß (höchstens 15 MB).", "error"); return; }
-      button.disabled = true;
-      setImportStatus(campfireShot ? "Meetup wird abgerufen und Screenshot ausgelesen …" : "Meetup wird abgerufen …");
+    function removeCampfireShot(message = "Screenshot entfernt.") {
+      if (campfireImported) {
+        let datesReset = false;
+        for (const [id, value] of Object.entries(campfireImported.values)) {
+          const field = document.getElementById(id);
+          if (!field || field.value !== value) continue;
+          if (id === "start" || id === "end") { datesReset = true; continue; }
+          field.value = id === "type" ? (campfireImported.previousType || "manual-event") : "";
+        }
+        if (datesReset) { allDay.checked = false; updateDateInputMode(false); setDefaultTimes(); }
+      }
+      campfireImported = null;
+      showCampfireShot(null);
+      setImportStatus(message);
+    }
+    async function importCampfireShot(file) {
+      if (!file) return;
+      if (!/^image\/(png|jpeg|webp)$/.test(file.type || "")) { setImportStatus("Bitte einen Screenshot als PNG, JPEG oder WebP wählen.", "error"); return; }
+      if (file.size > 15 * 1024 * 1024) { setImportStatus("Der Screenshot ist zu groß (höchstens 15 MB).", "error"); return; }
+      if (campfireImported) removeCampfireShot("");
+      showCampfireShot(file);
+      const label = document.getElementById("campfire-shot-label");
+      label.classList.add("busy");
+      setImportStatus("Screenshot wird ausgelesen …");
       try {
-        const body = { url: input.value };
-        if (campfireShot) body.image = await readAsDataUrl(campfireShot);
-        const { meetup } = await request("/api/admin/campfire", { method: "POST", body: JSON.stringify(body) });
+        const { meetup } = await request("/api/admin/campfire", { method: "POST", body: JSON.stringify({ image: await readAsDataUrl(file) }) });
         if (meetup.existingEventId && meetup.existingEventId !== state.editingId) {
           const existing = state.events.find(item => String(item.id) === meetup.existingEventId);
           setImportStatus(`Dieses Meetup ist schon eingetragen${existing ? `: „${existing.title}“` : ""}. Zum Ändern dort auf Bearbeiten klicken.`, "error");
           return;
         }
+        const typeField = document.getElementById("type");
+        const imported = { values: {}, previousType: typeField.value };
         const filled = [];
-        if (meetup.title) { document.getElementById("title").value = meetup.title; filled.push("Titel"); }
-        if (meetup.description) { document.getElementById("description").value = meetup.description; filled.push("Beschreibung"); }
-        if (meetup.url) { document.getElementById("url").value = meetup.url; filled.push("Link"); }
+        const put = (id, value, labelText) => {
+          if (!value) return;
+          document.getElementById(id).value = value;
+          imported.values[id] = document.getElementById(id).value;
+          if (labelText) filled.push(labelText);
+        };
+        put("title", meetup.title, "Titel");
+        put("description", meetup.description, "Beschreibung");
         if (meetup.start && meetup.end) {
           allDay.checked = Boolean(meetup.all_day);
           updateDateInputMode(false);
-          document.getElementById("start").value = meetup.start.slice(0, allDay.checked ? 10 : 16);
-          document.getElementById("end").value = meetup.end.slice(0, allDay.checked ? 10 : 16);
-          filled.push(meetup.all_day ? "Datum" : "Datum und Uhrzeit");
+          put("start", meetup.start.slice(0, allDay.checked ? 10 : 16), meetup.all_day ? "Datum" : "Datum und Uhrzeit");
+          put("end", meetup.end.slice(0, allDay.checked ? 10 : 16));
         }
-        if (meetup.location) { document.getElementById("location").value = meetup.location; filled.push("Ort"); }
-        const type = document.getElementById("type");
-        if (!type.value || type.value === "manual-event") type.value = "manual-meetup";
-        input.value = "";
-        setCampfireShot(null);
+        put("location", meetup.location, "Ort");
+        if (Array.isArray(meetup.coordinates)) put("coordinates", meetup.coordinates.join(", "), "Koordinaten");
+        put("type", "campfire-meetup");
+        campfireImported = imported;
         const missing = [];
+        if (!meetup.title) missing.push("Titel");
         if (!meetup.start) missing.push("Datum und Uhrzeit");
         if (!meetup.location) missing.push("Ort");
-        let message = `Übernommen: ${filled.join(", ") || "nichts"}.`;
-        if (missing.length) message += ` Bitte ${missing.join(" und ")} ergänzen.`;
-        message += " Werte kurz prüfen und speichern.";
-        if (meetup.warnings && meetup.warnings.length) message += ` Hinweis: ${meetup.warnings.join(" ")}`;
-        setImportStatus(message, missing.length || (meetup.warnings && meetup.warnings.length) ? "" : "success");
-        document.getElementById(meetup.start ? "save-button" : "start").focus();
+        let message = filled.length ? `Übernommen: ${filled.join(", ")}.` : "Im Screenshot wurde nichts erkannt.";
+        if (missing.length && filled.length) message += ` Bitte ${missing.join(", ")} ergänzen.`;
+        if (filled.length) message += " Werte kurz prüfen und speichern.";
+        setImportStatus(message, missing.length ? "" : "success");
       } catch (error) {
         setImportStatus(error.message, "error");
       } finally {
-        button.disabled = false;
+        label.classList.remove("busy");
       }
     }
-    document.getElementById("campfire-shot").addEventListener("change", event => setCampfireShot(event.target.files[0]));
-    document.getElementById("campfire-shot-clear").addEventListener("click", () => setCampfireShot(null));
-    document.querySelector(".import-box").addEventListener("paste", event => {
+    document.getElementById("campfire-shot").addEventListener("change", event => importCampfireShot(event.target.files[0]));
+    document.getElementById("campfire-shot-clear").addEventListener("click", () => removeCampfireShot());
+    document.addEventListener("paste", event => {
+      if (dashboard.hidden) return;
       const item = [...(event.clipboardData ? event.clipboardData.items : [])].find(entry => entry.type.startsWith("image/"));
       if (!item) return;
       event.preventDefault();
-      setCampfireShot(item.getAsFile());
-    });
-    document.getElementById("campfire-import").addEventListener("click", importCampfire);
-    document.getElementById("campfire-url").addEventListener("keydown", event => {
-      if (event.key === "Enter") { event.preventDefault(); importCampfire(); }
+      importCampfireShot(item.getAsFile());
     });
 
     eventForm.addEventListener("submit", async event => {

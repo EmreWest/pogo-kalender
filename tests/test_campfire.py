@@ -254,6 +254,46 @@ class CampfireEndpointTest(WebBase):
         finally:
             campfire.read_screenshot = original
 
+    def test_location_with_coordinates_in_calendar(self) -> None:
+        self.client.login()
+        status, data = self.client.json("POST", "/api/admin/events", {
+            "title": "Raid Hour Treffen", "type": "campfire-meetup", "all_day": False,
+            "start": "2026-11-10T18:00", "end": "2026-11-10T19:00",
+            "location": "Brückenstraße 5, Augsburg, BY, Deutschland", "coordinates": "48.377828, 10.902163",
+        })
+        self.assertEqual(status, 201, data)
+        self.assertEqual(data["event"]["geo"], [48.377828, 10.902163])
+
+        status, payload = self.client.json("GET", "/api/events")
+        event = next(item for item in payload["events"] if item["id"] == data["event"]["id"])
+        self.assertEqual(event["geo"], [48.377828, 10.902163])
+        self.assertEqual(event["category"], "Campfire-Meetup")
+        self.assertEqual(event["routeUrl"], "https://www.google.com/maps/dir/?api=1&destination=48.377828,10.902163")
+
+        status, _, body = self.client.request("GET", "/pokemon-go-de.ics")
+        text = body.decode("utf-8").replace("\r\n ", "")
+        self.assertIn("LOCATION:Brückenstraße 5\\, Augsburg\\, BY\\, Deutschland", text)
+        self.assertIn("GEO:48.377828;10.902163", text)
+        self.assertIn('X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS="Brückenstraße 5, Augsburg, BY, Deutschland"', text)
+        self.assertIn(":geo:48.377828,10.902163", text)
+        self.assertIn("Route: https://www.google.com/maps/dir/?api=1&destination=48.377828\\,10.902163", text)
+
+        for bad in ("48.3", "abc, def", "95, 10", "0, 0"):
+            status, data = self.client.json("POST", "/api/admin/events", {
+                "title": "X", "all_day": True, "start": "2026-11-10", "end": "2026-11-10", "coordinates": bad,
+            })
+            self.assertEqual(status, 400, bad)
+
+    def test_location_without_coordinates_gets_route_by_text(self) -> None:
+        self.client.login()
+        self.client.json("POST", "/api/admin/events", {
+            "title": "Treffen", "all_day": True, "start": "2026-11-10", "end": "2026-11-10", "location": "Königsplatz, Augsburg",
+        })
+        status, _, body = self.client.request("GET", "/pokemon-go-de.ics")
+        text = body.decode("utf-8").replace("\r\n ", "")
+        self.assertIn("Route: https://www.google.com/maps/dir/?api=1&destination=K%C3%B6nigsplatz%2C%20Augsburg", text)
+        self.assertNotIn("GEO:", text)
+
     def test_invalid_link(self) -> None:
         self.client.login()
         status, data = self.client.json("POST", "/api/admin/campfire", {"url": "https://example.com/x"})

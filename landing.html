@@ -959,9 +959,11 @@
       border-radius: 10px;
     }
 
+    .detail-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    .detail-link[hidden] { display: none; }
+    .detail-link.route { background: var(--surface-2, #eef2f7); color: var(--text, #0f172a); border: 1px solid var(--line, #d7deea); }
     .detail-link {
       display: inline-flex;
-      margin-top: 18px;
       padding: 11px 15px;
       border-radius: 11px;
       background: var(--brand);
@@ -1286,7 +1288,7 @@
       .modal-infographics { order: 2; margin-top: 10px; }
       .modal-pokemon { order: 3; }
       .description { order: 4; margin-top: 14px; }
-      .detail-link { order: 5; align-self: flex-start; }
+      .detail-links { order: 5; align-self: stretch; }
       .infographic-item img { max-height: 62vh; }
     }
 
@@ -1702,7 +1704,10 @@
         </div>
         <p class="infographic-credit" id="infographic-credit"></p>
       </section>
-      <a class="detail-link" id="modal-link" target="_blank" rel="noopener">Details bei LeekDuck</a>
+      <div class="detail-links">
+        <a class="detail-link route" id="modal-route" target="_blank" rel="noopener" hidden>📍 Route zum Treffpunkt</a>
+        <a class="detail-link" id="modal-link" target="_blank" rel="noopener">Details bei LeekDuck</a>
+      </div>
     </article>
   </div>
 
@@ -1792,6 +1797,7 @@
       // Manuell gepflegte Events
       "manual-event": "#0f766e",
       "manual-meetup": "#16a34a",
+      "campfire-meetup": "#ea580c",
       "manual-raid": "#be123c",
       "manual-reminder": "#7c3aed"
     };
@@ -1927,6 +1933,20 @@
 
     function pokemonImages(event) {
       return Array.isArray(event.pokemonImages) ? event.pokemonImages.filter(image => image && image.url) : [];
+    }
+
+    // Navigation link: Apple Maps on Apple devices, Google Maps everywhere else.
+    function mapsUrl(event) {
+      const geo = Array.isArray(event.geo) && event.geo.length === 2 ? event.geo : null;
+      const place = String(event.location || "").trim();
+      if (!geo && !place) return "";
+      const apple = /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent);
+      if (apple) {
+        return geo
+          ? `https://maps.apple.com/?daddr=${geo[0]},${geo[1]}&q=${encodeURIComponent(place || event.title || "Treffpunkt")}`
+          : `https://maps.apple.com/?daddr=${encodeURIComponent(place)}`;
+      }
+      return event.routeUrl || `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(geo ? geo.join(",") : place)}`;
     }
 
     // Small round images: Pokémon first, otherwise the LeekDuck event image.
@@ -2393,6 +2413,10 @@
       const link = document.getElementById("modal-link");
       link.hidden = !event.url;
       link.href = event.url || "#";
+      const route = document.getElementById("modal-route");
+      const routeUrl = mapsUrl(event);
+      route.hidden = !routeUrl;
+      route.href = routeUrl || "#";
       link.textContent = /^https:\/\/(cmpf\.re|campfire\.(scopely|nianticlabs)\.com)\//.test(event.url || "") ? "In Campfire öffnen" : event.isManual ? "Weiterführenden Link öffnen" : "Details bei LeekDuck";
       document.getElementById("modal").classList.add("open");
       document.body.style.overflow = "hidden";

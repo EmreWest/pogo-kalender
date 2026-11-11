@@ -24,7 +24,7 @@ from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, quote, urlsplit
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import campfire
@@ -265,6 +265,7 @@ EVENT_TYPE_LABELS: dict[str, str] = {
     "event": "Event",
     "manual-event": "Manuelles Event",
     "manual-meetup": "Treffen",
+    "campfire-meetup": "Campfire-Meetup",
     "manual-raid": "Raid-Treffen",
     "manual-reminder": "Erinnerung",
 }
@@ -402,6 +403,35 @@ def parse_local_form_datetime(value: Any, local_tz: ZoneInfo, field_name: str) -
     return parsed.astimezone(local_tz)
 
 
+def parse_coordinates(value: Any) -> list[float] | None:
+    """Accept "48.366268, 10.894629", [48.36, 10.89] or empty; return [lat, lon] or None."""
+    if value in (None, "", []):
+        return None
+    if isinstance(value, (list, tuple)) and len(value) == 2:
+        parts = [str(item) for item in value]
+    else:
+        text = str(value).strip()
+        if not text:
+            return None
+        parts = re.split(r"\s*[,;]\s*|\s+", text.replace("°", ""))
+        parts = [part for part in parts if part]
+    try:
+        if len(parts) != 2:
+            raise ValueError
+        lat, lon = float(parts[0]), float(parts[1])
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Koordinaten bitte als „Breite, Länge“ angeben, z. B. 48.366268, 10.894629.") from exc
+    if not (-90 <= lat <= 90 and -180 <= lon <= 180) or (lat == 0 and lon == 0):
+        raise ValueError("Die Koordinaten liegen außerhalb des gültigen Bereichs.")
+    return [round(lat, 6), round(lon, 6)]
+
+
+def maps_route_url(location: str, geo: list[float] | None) -> str:
+    """Google Maps directions link; works in browsers and opens the Maps app on phones."""
+    destination = f"{geo[0]},{geo[1]}" if geo else location
+    return "https://www.google.com/maps/dir/?api=1&destination=" + quote(destination, safe="," if geo else "")
+
+
 def validate_manual_event_payload(
     payload: dict[str, Any],
     config: dict[str, Any],
@@ -414,6 +444,7 @@ def validate_manual_event_payload(
     title = sanitize_text(payload.get("title"), 200, "Titel", required=True)
     description = sanitize_text(payload.get("description"), 5000, "Beschreibung")
     location = sanitize_text(payload.get("location"), 300, "Ort")
+    geo = parse_coordinates(payload.get("coordinates"))
     url = validate_http_url(payload.get("url"))
     event_type = sanitize_text(payload.get("type") or "manual-event", 64, "Eventtyp").casefold()
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", event_type):
@@ -462,6 +493,7 @@ def validate_manual_event_payload(
         "all_day": all_day,
         "type": event_type,
         "location": location,
+        "geo": geo,
         "url": url,
         "pokemon": pokemon,
         "created_at": str(existing.get("created_at") or now_iso),
@@ -1359,14 +1391,24 @@ def build_description(
     return "\n".join(lines)
 
 
-def build_manual_description(event: dict[str, Any]) -> str:
+def manual_event_geo(event: dict[str, Any]) -> list[float] | None:
+    try:
+        return parse_coordinates(event.get("geo"))
+    except ValueError:
+        return None
+
+
+def build_manual_description(event: dict[str, Any], route: bool = False) -> str:
     lines: list[str] = []
     description = str(event.get("description") or "").strip()
     if description:
         lines.append(description)
     location = str(event.get("location") or "").strip()
+    geo = manual_event_geo(event)
     if location:
         lines.append(f"Ort: {location}")
+    if route and (location or geo):
+        lines.append(f"Route: {maps_route_url(location, geo)}")
     link = str(event.get("url") or "").strip()
     if link:
         lines.append(f"Details: {link}")
@@ -1477,6 +1519,7 @@ def create_calendar(
         category = EVENT_TYPE_LABELS.get(event_type, event_type.replace("-", " ").title())
         event_description = build_manual_description(event)
         location = str(event.get("location") or "").strip()
+        geo = manual_event_geo(event)
         link = str(event.get("url") or "").strip()
         image_source_event = {
             "eventType": event_type,
@@ -1501,13 +1544,21 @@ def create_calendar(
             lines.append(f"DTEND:{format_utc(end)}")
         lines.extend([
             f"SUMMARY:{ical_escape(title)}",
-            f"DESCRIPTION:{ical_escape(event_description)}",
+            f"DESCRIPTION:{ical_escape(build_manual_description(event, route=True))}",
             f"CATEGORIES:{ical_escape(category)}",
             "STATUS:CONFIRMED",
             "TRANSP:TRANSPARENT",
         ])
         if location:
             lines.append(f"LOCATION:{ical_escape(location)}")
+        if geo:
+            # GEO for all clients; Apple Calendar shows a map pin with the structured location.
+            lines.append(f"GEO:{geo[0]};{geo[1]}")
+            label = (location or title).replace('"', "'").replace("\n", " ")
+            lines.append(
+                f'X-APPLE-STRUCTURED-LOCATION;VALUE=URI;X-ADDRESS="{label}";X-APPLE-RADIUS=70;'
+                f'X-TITLE="{label}":geo:{geo[0]},{geo[1]}'
+            )
         if link:
             lines.append(f"URL:{ical_escape(link)}")
         lines.append("END:VEVENT")
@@ -1527,6 +1578,8 @@ def create_calendar(
             "allDay": all_day,
             "isManual": True,
             "location": location,
+            "geo": geo,
+            "routeUrl": maps_route_url(location, geo) if (location or geo) else "",
         })
 
     web_events.sort(key=lambda item: str(item.get("start") or ""))
