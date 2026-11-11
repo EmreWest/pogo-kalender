@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 import csv
 import hashlib
 import hmac
@@ -497,6 +499,55 @@ def manual_event_in_window(event: dict[str, Any], config: dict[str, Any], now_lo
     past_days = max(int(filters.get("past_days", 3)), 0)
     future_days = max(int(filters.get("future_days", 365)), 0)
     return end >= now_local - timedelta(days=past_days) and start <= now_local + timedelta(days=future_days)
+
+
+def import_campfire(payload: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
+    """Combine a Campfire link (title, description, link) and a screenshot (date, time, place)."""
+    link = str(payload.get("url") or "").strip()
+    image = str(payload.get("image") or "").strip()
+    if not link and not image:
+        raise ValueError("Bitte einen Campfire-Link einfügen oder einen Screenshot auswählen.")
+    warnings: list[str] = []
+    meetup: dict[str, Any] = {"id": None, "url": "", "title": "", "description": "", "image": ""}
+    if link:
+        try:
+            meetup.update(campfire.fetch_meetup(link))
+        except Exception as exc:
+            if not image:
+                raise
+            warnings.append(f"Link: {exc}")
+    screenshot: dict[str, Any] = {}
+    if image:
+        match = re.match(r"^data:image/[a-z+.-]+;base64,(.*)$", image, re.S)
+        try:
+            data = base64.b64decode(match.group(1) if match else image, validate=True)
+        except (binascii.Error, ValueError) as exc:
+            raise ValueError("Der Screenshot konnte nicht gelesen werden.") from exc
+        screenshot = campfire.read_screenshot(data)
+        if not screenshot.get("start"):
+            warnings.append("Im Screenshot wurde kein Datum erkannt.")
+        elif not screenshot.get("location"):
+            warnings.append("Im Screenshot wurde kein Ort erkannt.")
+        for key in ("title", "description"):
+            if not meetup.get(key) and screenshot.get(key):
+                meetup[key] = screenshot[key]
+    for key in ("start", "end", "location", "coordinates"):
+        meetup[key] = screenshot.get(key) or (None if key != "location" else "")
+    meetup["all_day"] = bool(screenshot.get("all_day"))
+    meetup["warnings"] = warnings
+
+    existing = None
+    events = load_manual_events(config)
+    if meetup.get("id"):
+        existing = next((event for event in events if str(meetup["id"]) in str(event.get("url") or "").casefold()), None)
+    elif meetup.get("title") and meetup.get("start"):
+        existing = next((
+            event for event in events
+            if str(event.get("title") or "").casefold() == str(meetup["title"]).casefold()
+            and str(event.get("start") or "")[:10] == str(meetup["start"])[:10]
+        ), None)
+    meetup["existingEventId"] = str(existing.get("id")) if existing else None
+    return meetup
 
 
 def manual_event_for_admin(event: dict[str, Any]) -> dict[str, Any]:
@@ -2093,8 +2144,8 @@ class CalendarHandler(BaseHTTPRequestHandler):
                 return
             headers = {"Cache-Control": "no-store"}
             try:
-                payload = self.read_json_body(8192)
-                meetup = campfire.fetch_meetup(str(payload.get("url") or ""))
+                payload = self.read_json_body(22 * 1024 * 1024)
+                meetup = import_campfire(payload, config)
             except ValueError as exc:
                 self.send_json(400, {"error": str(exc)}, headers)
                 return
@@ -2102,12 +2153,6 @@ class CalendarHandler(BaseHTTPRequestHandler):
                 LOGGER.warning("Campfire-Import fehlgeschlagen: %s", exc)
                 self.send_json(502, {"error": str(exc)}, headers)
                 return
-            existing = next(
-                (event for event in load_manual_events(config)
-                 if meetup["id"] in str(event.get("url") or "").casefold()),
-                None,
-            )
-            meetup["existingEventId"] = str(existing.get("id")) if existing else None
             self.send_json(200, {"meetup": meetup}, headers)
             return
 

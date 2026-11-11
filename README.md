@@ -135,7 +135,10 @@ Sicherheit:
 
 Eigene Events haben Titel, Eventtyp, ganztägig oder Start/Ende, Beschreibung, Ort, Link und optional Pokémon für Bilder (deutsche und englische Namen, auch mit Zusätzen wie „Mega“ oder „Dynamax“). Vordefinierte Typen sind `manual-event`, `manual-meetup`, `manual-raid` und `manual-reminder`, eigene Typen aus Kleinbuchstaben, Zahlen und Bindestrichen sind möglich.
 
-Campfire-Meetups lassen sich per Link übernehmen: Teilen-Link (`https://cmpf.re/…`) oder den ganzen Teilen-Text in das Feld „Aus Campfire übernehmen“ einfügen. Der Server ruft die öffentliche Meetup-Seite ab und übernimmt Titel, Beschreibung und Link, Datum, Uhrzeit und Ort werden von Hand ergänzt. Ist das Meetup schon eingetragen, weist der Admin darauf hin. Im Kalender erscheint der Link als „In Campfire öffnen“.
+Campfire-Meetups lassen sich im Feld „Aus Campfire übernehmen“ importieren:
+- Link: Teilen-Link (`https://cmpf.re/…`) oder den ganzen Teilen-Text einfügen. Der Server ruft die öffentliche Meetup-Seite ab und übernimmt Titel, Beschreibung und Link. Datum, Uhrzeit und Ort stehen dort nicht.
+- Screenshot: Ein Screenshot des Meetups aus der Campfire-App (Deutsch oder Englisch) liefert per Texterkennung Datum, Uhrzeit und Ort, ohne Link auch Titel und Beschreibung. Am Desktop kann der Screenshot auch mit Strg+V bzw. Cmd+V in das Linkfeld eingefügt werden. Das Bild wird nur ausgelesen und nicht gespeichert.
+- Am besten beides zusammen übergeben. Die Werte landen im Formular und werden vor dem Speichern geprüft. Ist das Meetup schon eingetragen, weist der Admin darauf hin. Im Kalender erscheint der Link als „In Campfire öffnen“.
 
 Gespeichert wird atomar in `/data/manual-events.json`. Bei ganztägigen Events ist das Ende wie in iCal üblich exklusiv: Ein Event nur am 22. August steht als `"start": "2026-08-22", "end": "2026-08-23"` in der Datei. Ein Beispiel liegt in `manual-events.example.json`.
 

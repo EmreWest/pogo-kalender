@@ -115,6 +115,8 @@
     .import-row { display: flex; gap: 8px; margin-top: 6px; }
     .import-row input { flex: 1 1 auto; min-width: 0; }
     .import-box .status-line { margin-top: 8px; min-height: 0; }
+    .import-row .hint { align-self: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 auto; }
+    .file-button { display: inline-flex; align-items: center; cursor: pointer; flex: 0 0 auto; }
     .events-list { display: grid; gap: 11px; }
     .events-empty { color: var(--muted); text-align: center; padding: 42px 14px; border: 1px dashed var(--line); border-radius: 14px; }
     .event-card { border: 1px solid var(--line); border-radius: 15px; background: var(--surface-2); padding: 15px; }
@@ -231,7 +233,13 @@
                 <input id="campfire-url" maxlength="2000" placeholder="https://cmpf.re/… oder Teilen-Text einfügen" autocomplete="off">
                 <button class="button secondary small" id="campfire-import" type="button">Übernehmen</button>
               </div>
-              <small class="hint">Übernimmt Titel, Beschreibung und Link des Meetups. Datum, Uhrzeit und Ort bitte selbst eintragen.</small>
+              <div class="import-row">
+                <label class="button secondary small file-button" for="campfire-shot">Screenshot wählen</label>
+                <input id="campfire-shot" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+                <span class="hint" id="campfire-shot-name">Kein Screenshot gewählt (auch per Einfügen möglich)</span>
+                <button class="button secondary small" id="campfire-shot-clear" type="button" hidden>Entfernen</button>
+              </div>
+              <small class="hint">Der Link liefert Titel, Beschreibung und Link zum Meetup. Ein Screenshot des Meetups aus der Campfire-App liefert Datum, Uhrzeit und Ort. Beides zusammen ergibt das vollständige Event. Der Screenshot wird nur ausgelesen und nicht gespeichert.</small>
               <div class="status-line" id="campfire-status" role="status"></div>
             </div>
             <div class="form-grid">
@@ -824,33 +832,76 @@
       element.textContent = message;
       element.className = `status-line ${kind}`.trim();
     }
+    let campfireShot = null;
+    function setCampfireShot(file) {
+      campfireShot = file || null;
+      document.getElementById("campfire-shot-name").textContent = file ? (file.name || "Screenshot aus der Zwischenablage") : "Kein Screenshot gewählt (auch per Einfügen möglich)";
+      document.getElementById("campfire-shot-clear").hidden = !file;
+      if (!file) document.getElementById("campfire-shot").value = "";
+    }
+    function readAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Der Screenshot konnte nicht gelesen werden."));
+        reader.readAsDataURL(file);
+      });
+    }
     async function importCampfire() {
       const input = document.getElementById("campfire-url");
       const button = document.getElementById("campfire-import");
-      if (!input.value.trim()) { input.focus(); return; }
+      if (!input.value.trim() && !campfireShot) { input.focus(); return; }
+      if (campfireShot && campfireShot.size > 15 * 1024 * 1024) { setImportStatus("Der Screenshot ist zu groß (höchstens 15 MB).", "error"); return; }
       button.disabled = true;
-      setImportStatus("Meetup wird abgerufen …");
+      setImportStatus(campfireShot ? "Meetup wird abgerufen und Screenshot ausgelesen …" : "Meetup wird abgerufen …");
       try {
-        const { meetup } = await request("/api/admin/campfire", { method: "POST", body: JSON.stringify({ url: input.value }) });
+        const body = { url: input.value };
+        if (campfireShot) body.image = await readAsDataUrl(campfireShot);
+        const { meetup } = await request("/api/admin/campfire", { method: "POST", body: JSON.stringify(body) });
         if (meetup.existingEventId && meetup.existingEventId !== state.editingId) {
           const existing = state.events.find(item => String(item.id) === meetup.existingEventId);
           setImportStatus(`Dieses Meetup ist schon eingetragen${existing ? `: „${existing.title}“` : ""}. Zum Ändern dort auf Bearbeiten klicken.`, "error");
           return;
         }
-        document.getElementById("title").value = meetup.title || "";
-        document.getElementById("description").value = meetup.description || "";
-        document.getElementById("url").value = meetup.url || "";
+        const filled = [];
+        if (meetup.title) { document.getElementById("title").value = meetup.title; filled.push("Titel"); }
+        if (meetup.description) { document.getElementById("description").value = meetup.description; filled.push("Beschreibung"); }
+        if (meetup.url) { document.getElementById("url").value = meetup.url; filled.push("Link"); }
+        if (meetup.start && meetup.end) {
+          allDay.checked = Boolean(meetup.all_day);
+          updateDateInputMode(false);
+          document.getElementById("start").value = meetup.start.slice(0, allDay.checked ? 10 : 16);
+          document.getElementById("end").value = meetup.end.slice(0, allDay.checked ? 10 : 16);
+          filled.push(meetup.all_day ? "Datum" : "Datum und Uhrzeit");
+        }
+        if (meetup.location) { document.getElementById("location").value = meetup.location; filled.push("Ort"); }
         const type = document.getElementById("type");
         if (!type.value || type.value === "manual-event") type.value = "manual-meetup";
         input.value = "";
-        setImportStatus("Übernommen. Bitte Datum, Uhrzeit und Ort ergänzen und speichern.", "success");
-        document.getElementById("start").focus();
+        setCampfireShot(null);
+        const missing = [];
+        if (!meetup.start) missing.push("Datum und Uhrzeit");
+        if (!meetup.location) missing.push("Ort");
+        let message = `Übernommen: ${filled.join(", ") || "nichts"}.`;
+        if (missing.length) message += ` Bitte ${missing.join(" und ")} ergänzen.`;
+        message += " Werte kurz prüfen und speichern.";
+        if (meetup.warnings && meetup.warnings.length) message += ` Hinweis: ${meetup.warnings.join(" ")}`;
+        setImportStatus(message, missing.length || (meetup.warnings && meetup.warnings.length) ? "" : "success");
+        document.getElementById(meetup.start ? "save-button" : "start").focus();
       } catch (error) {
         setImportStatus(error.message, "error");
       } finally {
         button.disabled = false;
       }
     }
+    document.getElementById("campfire-shot").addEventListener("change", event => setCampfireShot(event.target.files[0]));
+    document.getElementById("campfire-shot-clear").addEventListener("click", () => setCampfireShot(null));
+    document.querySelector(".import-box").addEventListener("paste", event => {
+      const item = [...(event.clipboardData ? event.clipboardData.items : [])].find(entry => entry.type.startsWith("image/"));
+      if (!item) return;
+      event.preventDefault();
+      setCampfireShot(item.getAsFile());
+    });
     document.getElementById("campfire-import").addEventListener("click", importCampfire);
     document.getElementById("campfire-url").addEventListener("keydown", event => {
       if (event.key === "Enter") { event.preventDefault(); importCampfire(); }

@@ -30,12 +30,12 @@ def tesseract_available() -> bool:
     return shutil.which("tesseract") is not None
 
 
-def _run_tesseract(image_path: Path, languages: str, timeout: int) -> str:
+def _run_tesseract(image_path: Path, languages: str, timeout: int, psm: int = 11) -> str:
     env = dict(os.environ)
     # Keep OCR on one core so it never competes with the web server.
     env.setdefault("OMP_THREAD_LIMIT", "1")
     result = subprocess.run(
-        ["tesseract", str(image_path), "stdout", "-l", languages, "--psm", "11"],
+        ["tesseract", str(image_path), "stdout", "-l", languages, "--psm", str(psm)],
         capture_output=True,
         timeout=timeout,
         env=env,
